@@ -35,7 +35,8 @@ export default function ChangePasswordScreen() {
     try {
       await changePassword({ currentPassword: current, newPassword: next });
       showToast({ type: 'success', message: 'Password changed' });
-      router.replace('/(tabs)');
+      const u = useAuthStore.getState().user;
+      router.replace(u && u.role !== 'Driver' ? '/(ops)' : '/(tabs)');
     } catch (err) {
       setError(errMessage(err, 'Could not change password'));
     } finally {

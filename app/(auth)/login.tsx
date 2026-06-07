@@ -59,10 +59,12 @@ export default function LoginScreen() {
     try {
       await login({ email: identity.trim(), password, orgSlug: orgSlug.trim() || undefined });
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      if (useAuthStore.getState().user?.mustChangePwd) {
+      const u = useAuthStore.getState().user;
+      if (u?.mustChangePwd) {
         router.replace('/(auth)/change-password');
       } else {
-        router.replace('/(tabs)');
+        // Non-driver roles (Operations/Staff/Admin) get the Ops experience.
+        router.replace(u && u.role !== 'Driver' ? '/(ops)' : '/(tabs)');
       }
     } catch (err) {
       // eslint-disable-next-line no-console

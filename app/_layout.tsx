@@ -13,9 +13,15 @@ import { LoadingOverlay } from '@/components/ui/LoadingOverlay';
 import { useColors, useResolvedScheme } from '@/theme';
 
 /** Redirects between the (auth) and (tabs) groups based on auth state. */
+/** Non-driver roles (Operations / Staff / Admin) get the Ops experience. */
+function isOpsRole(role: string | undefined): boolean {
+  return !!role && role !== 'Driver';
+}
+
 function useAuthGate(): void {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const isLoading = useAuthStore((s) => s.isLoading);
+  const role = useAuthStore((s) => s.user?.role);
   const segments = useSegments();
   const router = useRouter();
 
@@ -23,14 +29,20 @@ function useAuthGate(): void {
     if (isLoading) return;
     const seg = segments as string[];
     const inAuthGroup = seg[0] === '(auth)';
-    // change-password is reachable while authenticated (opened from Profile).
     const onChangePassword = seg[1] === 'change-password';
+    const ops = isOpsRole(role);
+    const home = ops ? '/(ops)' : '/(tabs)';
+
     if (!isAuthenticated && !inAuthGroup) {
       router.replace('/(auth)/login');
     } else if (isAuthenticated && inAuthGroup && !onChangePassword) {
-      router.replace('/(tabs)');
+      router.replace(home);
+    } else if (isAuthenticated && !inAuthGroup) {
+      // Keep each role in its own group (driver tabs vs ops tabs).
+      if (ops && seg[0] === '(tabs)') router.replace('/(ops)');
+      else if (!ops && seg[0] === '(ops)') router.replace('/(tabs)');
     }
-  }, [isAuthenticated, isLoading, segments, router]);
+  }, [isAuthenticated, isLoading, role, segments, router]);
 }
 
 function AppShell() {
