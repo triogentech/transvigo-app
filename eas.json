@@ -1,0 +1,30 @@
+{
+  "cli": { "version": ">= 10.0.0" },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "android": { "buildType": "apk" },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "http://localhost:3007",
+        "EXPO_PUBLIC_APP_ENV": "development"
+      }
+    },
+    "staging": {
+      "distribution": "internal",
+      "android": { "buildType": "apk" },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://staging-api.transvigo.com",
+        "EXPO_PUBLIC_APP_ENV": "staging"
+      }
+    },
+    "production": {
+      "distribution": "internal",
+      "android": { "buildType": "apk" },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://transvigo-be.transvigo.in",
+        "EXPO_PUBLIC_APP_ENV": "production"
+      }
+    }
+  }
+}
