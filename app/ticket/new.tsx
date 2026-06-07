@@ -19,15 +19,17 @@ import { titleCase } from '@/utils/format';
 import type { CreateTicketBody, TicketIssueType, TicketPriority } from '@/types/api.types';
 
 const ISSUE_TYPES: { value: TicketIssueType; icon: keyof typeof Ionicons.glyphMap }[] = [
-  { value: 'breakdown', icon: 'construct' },
-  { value: 'accident', icon: 'car-sport' },
-  { value: 'tyre_puncture', icon: 'ellipse' },
-  { value: 'engine_issue', icon: 'cog' },
-  { value: 'electrical_issue', icon: 'flash' },
-  { value: 'brake_issue', icon: 'hand-left' },
-  { value: 'service_due', icon: 'notifications' },
-  { value: 'driver_complaint', icon: 'chatbubble-ellipses' },
-  { value: 'other', icon: 'help-circle' },
+  { value: 'driver_advance', icon: 'cash-outline' },
+  { value: 'driver_fooding', icon: 'fast-food-outline' },
+  { value: 'diesel_request', icon: 'flame-outline' },
+  { value: 'lock_issue', icon: 'lock-closed-outline' },
+  { value: 'touching_hold', icon: 'hand-left-outline' },
+  { value: 'tyre_request', icon: 'ellipse-outline' },
+  { value: 'breakdown', icon: 'construct-outline' },
+  { value: 'accident', icon: 'warning-outline' },
+  { value: 'loading_issue', icon: 'arrow-down-circle-outline' },
+  { value: 'unloading_issue', icon: 'arrow-up-circle-outline' },
+  { value: 'other', icon: 'ellipsis-horizontal-circle-outline' },
 ];
 
 const PRIORITIES: { value: TicketPriority; color: string }[] = [
@@ -44,6 +46,7 @@ export default function NewTicketScreen() {
   const { location: geoLocation, loading: geoLoading, requestLocation } = useLocation();
 
   const [issueType, setIssueType] = useState<TicketIssueType | null>(null);
+  const [otherIssue, setOtherIssue] = useState('');
   const [priority, setPriority] = useState<TicketPriority>('medium');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -63,13 +66,17 @@ export default function NewTicketScreen() {
   const submit = async (): Promise<void> => {
     setError(null);
     if (!issueType) return setError('Select an issue type');
-    if (!title.trim()) return setError('Enter a short title');
+    const isOther = issueType === 'other';
+    if (isOther && !otherIssue.trim()) return setError('Please specify the issue');
+    // For "Other", the driver's free-text becomes the ticket title.
+    const effectiveTitle = isOther ? otherIssue.trim() : title.trim();
+    if (!effectiveTitle) return setError('Enter a short title');
     if (!description.trim()) return setError('Describe the issue');
 
     const body: CreateTicketBody = {
       issueType,
       priority,
-      title: title.trim(),
+      title: effectiveTitle,
       description: description.trim(),
       location: location.trim() || null,
     };
@@ -170,7 +177,16 @@ export default function NewTicketScreen() {
             </View>
           ) : null}
 
-          <Input label="Title" value={title} onChangeText={setTitle} placeholder="Brief description of the issue" />
+          {issueType === 'other' ? (
+            <Input
+              label="Specify the issue"
+              value={otherIssue}
+              onChangeText={setOtherIssue}
+              placeholder="What is the issue?"
+            />
+          ) : (
+            <Input label="Title" value={title} onChangeText={setTitle} placeholder="Brief description of the issue" />
+          )}
           <TextArea
             label="Description"
             value={description}

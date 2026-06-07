@@ -6,7 +6,10 @@ export type TicketStatus = 'open' | 'acknowledged' | 'in_progress' | 'resolved' 
 export type TicketPriority = 'critical' | 'high' | 'medium' | 'low';
 export type TicketIssueType =
   | 'breakdown' | 'accident' | 'tyre_puncture' | 'engine_issue' | 'electrical_issue'
-  | 'brake_issue' | 'service_due' | 'driver_complaint' | 'other';
+  | 'brake_issue' | 'service_due' | 'driver_complaint' | 'other'
+  // Driver-facing categories (migration 010)
+  | 'driver_advance' | 'driver_fooding' | 'diesel_request' | 'lock_issue'
+  | 'touching_hold' | 'tyre_request' | 'loading_issue' | 'unloading_issue';
 export type FuelType = 'diesel' | 'petrol' | 'gas';
 export type DriverStatus = 'available' | 'assigned' | 'in_transit';
 export type ServiceScheduleStatus = 'upcoming' | 'due' | 'overdue' | 'completed';
