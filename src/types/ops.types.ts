@@ -8,6 +8,7 @@ export interface JobCard {
   vehicle?: { id: string; vehicleNumber: string } | null;
   driverComplaint: string;
   garage?: { id: string; name: string } | null;
+  supervisor?: { id: string; username: string } | null;
   entryOdometer: number;
   totalJobCost: string | number;
   entryTime: string;

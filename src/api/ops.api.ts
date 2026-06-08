@@ -16,6 +16,18 @@ export const getJobCards = () => list<JobCard>('/api/job-cards');
 export const createJobCard = (body: CreateJobCardBody) => api.post<JobCard>('/api/job-cards', body).then((r) => r.data);
 export const setJobCardStatus = (id: string, status: JobCardStatus) =>
   api.put<JobCard>(`/api/job-cards/${id}/status`, { status }).then((r) => r.data);
+export const assignJobCard = (id: string, supervisorId: string) =>
+  api.put<JobCard>(`/api/job-cards/${id}`, { supervisorId }).then((r) => r.data);
+
+// ── Tickets (assignment) ──
+export const assignTicket = (id: string, assignedTo: string) =>
+  api.put(`/api/tickets/${id}/assign`, { assignedTo }).then((r) => r.data);
+
+// ── Assignees (all users except drivers) ──
+export const getAssignees = async (): Promise<SelectOption[]> => {
+  const res = await api.get<SelectOption[]>('/api/select/assignees');
+  return res.data;
+};
 
 // ── Spare Parts ──
 export const getSpareParts = () => list<SparePart>('/api/spare-parts');

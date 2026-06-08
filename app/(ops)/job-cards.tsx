@@ -28,12 +28,23 @@ export default function OpsJobCards() {
   const [submitting, setSubmitting] = useState(false);
   const [vehicles, setVehicles] = useState<SelectOption[]>([]);
   const [garages, setGarages] = useState<SelectOption[]>([]);
+  const [assignees, setAssignees] = useState<SelectOption[]>([]);
   const [form, setForm] = useState({ vehicleId: '', complaint: '', odo: '', garageId: '' });
 
   useEffect(() => {
     ops.getVehicleOptions().then(setVehicles).catch(() => undefined);
     ops.getGarageOptions().then(setGarages).catch(() => undefined);
+    ops.getAssignees().then(setAssignees).catch(() => undefined);
   }, []);
+
+  const assign = async (id: string, supervisorId: string) => {
+    try {
+      await ops.assignJobCard(id, supervisorId);
+      await reload();
+    } catch (e) {
+      showToast({ type: 'error', message: errMessage(e) });
+    }
+  };
 
   const submit = useCallback(async () => {
     if (!form.vehicleId) return showToast({ type: 'error', message: 'Select a vehicle' });
@@ -74,6 +85,7 @@ export default function OpsJobCards() {
           <Text style={[styles.meta, { color: c.textSecondary }]}>{jc.vehicle?.vehicleNumber ?? '—'} · ₹{Number(jc.totalJobCost).toLocaleString('en-IN')}</Text>
           <Text style={[styles.complaint, { color: c.textPrimary }]} numberOfLines={2}>{jc.driverComplaint}</Text>
           <Select value={jc.status} onChange={(v) => changeStatus(jc.id, v as JobCardStatus)} options={STATUS_OPTS} label="Set status" />
+          <Select value={jc.supervisor?.id ?? null} onChange={(v) => assign(jc.id, v)} options={assignees} label="Assign to" placeholder="Unassigned" searchable />
         </Card>
       ))}
 
