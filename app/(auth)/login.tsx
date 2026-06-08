@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import {
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -20,18 +21,17 @@ import { Input } from '@/components/ui/Input';
 import { useAuthStore } from '@/store/auth.store';
 import { showToast } from '@/store/toast.store';
 
-// This screen is a fixed light-themed brand surface (it predates auth), so it
-// uses a local palette rather than useColors().
+const logo = require('../../assets/images/transvigo-logo.jpeg');
+
+// Fixed light brand surface (predates auth), so it uses a local palette.
 const ink = brand.navy;
 const palette = {
-  pageBg: '#E9EDF4',
-  cardTop: '#FFFFFF',
-  cardBottom: '#F4F7FC',
+  pageBg: '#EEF2F8',
+  card: '#FFFFFF',
   label: '#1E2A4A',
   body: '#6B7280',
   faint: '#9AA3B2',
   cardBorder: '#E5EAF2',
-  divider: '#E5EAF2',
 };
 
 export default function LoginScreen() {
@@ -52,7 +52,7 @@ export default function LoginScreen() {
   const onSubmit = async (): Promise<void> => {
     setError(null);
     if (!identity.trim() || !password) {
-      setError('Enter your driver identity and passkey');
+      setError('Enter your email or phone and password');
       return;
     }
     setSubmitting(true);
@@ -77,8 +77,8 @@ export default function LoginScreen() {
           const s = err.response.status;
           if (s === 409) {
             setNeedsOrg(true);
-            setError('This identity exists at more than one organisation — enter your organisation code below.');
-          } else if (s === 401) setError('Invalid identity or passkey');
+            setError('This account exists at more than one organisation — enter your organisation code below.');
+          } else if (s === 401) setError('Invalid email/phone or password');
           else if (s === 403) setError('Account is inactive');
           else setError(`Sign in failed — server error ${s}.`);
         }
@@ -98,40 +98,33 @@ export default function LoginScreen() {
         <ScrollView
           contentContainerStyle={[
             styles.scroll,
-            { paddingTop: insets.top + spacing.md, paddingBottom: insets.bottom + spacing.lg },
+            { paddingTop: insets.top + spacing.xl, paddingBottom: insets.bottom + spacing.lg },
           ]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <LinearGradient colors={[palette.cardTop, palette.cardBottom]} style={styles.card}>
+          {/* Card */}
+          <View style={styles.card}>
             {/* Brand */}
-            <View style={styles.brandRow}>
-              <Text style={styles.wordmark}>TRANSVIGO</Text>
-              <View style={styles.logoMark}>
-                <View style={styles.logoMarkInner}>
-                  <Ionicons name="arrow-forward" size={12} color="#FFFFFF" />
-                </View>
-              </View>
-            </View>
-            <Text style={styles.tagline}>Smooth Flow Driver Management</Text>
+            <Image source={logo} style={styles.logo} resizeMode="contain" />
 
-            {/* Heading */}
-            <Text style={styles.welcome}>Welcome Back</Text>
-            <Text style={styles.subtitle}>Login to start your daily route</Text>
+            <Text style={styles.welcome}>Welcome back</Text>
+            <Text style={styles.subtitle}>Sign in to your TransVigo account</Text>
 
             {/* Identity */}
-            <Text style={styles.fieldLabel}>Driver Identity</Text>
+            <Text style={styles.fieldLabel}>Email or Phone</Text>
             <Input
               value={identity}
               onChangeText={setIdentity}
-              placeholder="Email or Driver ID"
+              placeholder="you@company.com or 98765 43210"
               autoCapitalize="none"
               autoComplete="username"
-              leftIcon="id-card-outline"
+              keyboardType="email-address"
+              leftIcon="person-outline"
             />
 
-            {/* Passkey */}
-            <Text style={[styles.fieldLabel, { marginTop: spacing.lg }]}>Secure Passkey</Text>
+            {/* Password */}
+            <Text style={[styles.fieldLabel, { marginTop: spacing.lg }]}>Password</Text>
             <Input
               value={password}
               onChangeText={setPassword}
@@ -142,7 +135,7 @@ export default function LoginScreen() {
 
             {needsOrg ? (
               <>
-                <Text style={[styles.fieldLabel, { marginTop: spacing.lg }]}>Organisation</Text>
+                <Text style={[styles.fieldLabel, { marginTop: spacing.lg }]}>Organisation Code</Text>
                 <Input
                   value={orgSlug}
                   onChangeText={setOrgSlug}
@@ -159,10 +152,10 @@ export default function LoginScreen() {
                 <View style={[styles.checkbox, remember && styles.checkboxOn]}>
                   {remember ? <Ionicons name="checkmark" size={13} color="#FFFFFF" /> : null}
                 </View>
-                <Text style={styles.rememberText}>Remember device</Text>
+                <Text style={styles.rememberText}>Keep me signed in</Text>
               </Pressable>
-              <Pressable onPress={soon('Passkey recovery')} hitSlop={8}>
-                <Text style={styles.link}>Forgot?</Text>
+              <Pressable onPress={soon('Password recovery')} hitSlop={8}>
+                <Text style={styles.link}>Forgot password?</Text>
               </Pressable>
             </View>
 
@@ -190,18 +183,19 @@ export default function LoginScreen() {
                 end={{ x: 1, y: 0 }}
                 style={styles.cta}
               >
-                <Text style={styles.ctaText}>{submitting ? 'Initiating…' : 'Initiate Flow'}</Text>
+                <Text style={styles.ctaText}>{submitting ? 'Signing in…' : 'Sign In'}</Text>
                 {!submitting ? <Ionicons name="arrow-forward" size={18} color="#FFFFFF" /> : null}
               </LinearGradient>
             </Pressable>
-          </LinearGradient>
+          </View>
+
+          <Text style={styles.tagline}>Moving Business Forward</Text>
 
           {/* Footer */}
           <View style={styles.footer}>
-            <Text style={styles.footerText}>TransVigo Fleet Management v{version}</Text>
-            <Text style={styles.footerText}> • </Text>
+            <Text style={styles.footerText}>TransVigo Fleet Management · v{version}</Text>
             <Pressable onPress={soon('Privacy policy')} hitSlop={6}>
-              <Text style={[styles.footerText, styles.footerLink]}>Privacy Policy</Text>
+              <Text style={[styles.footerText, styles.footerLink]}> · Privacy Policy</Text>
             </Pressable>
           </View>
         </ScrollView>
@@ -211,39 +205,29 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  scroll: { flexGrow: 1, paddingHorizontal: spacing.lg, justifyContent: 'center' },
+  scroll: { flexGrow: 1, paddingHorizontal: spacing.lg, justifyContent: 'center', gap: spacing.lg },
+
+  logo: { width: '82%', height: 84, alignSelf: 'center', marginBottom: spacing.lg },
+
   card: {
-    borderRadius: 28,
+    backgroundColor: palette.card,
+    borderRadius: 24,
     borderWidth: 1,
     borderColor: palette.cardBorder,
     paddingHorizontal: spacing.xl,
     paddingTop: spacing.xxl,
     paddingBottom: spacing.xl,
     shadowColor: '#1B2D6B',
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.1,
     shadowRadius: 24,
     shadowOffset: { width: 0, height: 12 },
     elevation: 4,
   },
 
-  brandRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
-  wordmark: { fontSize: fontSize.xxl, fontWeight: fontWeight.heavy, color: ink, letterSpacing: 1 },
-  logoMark: {
-    width: 22,
-    height: 22,
-    borderRadius: 6,
-    backgroundColor: brand.teal,
-    alignItems: 'center',
-    justifyContent: 'center',
-    transform: [{ rotate: '45deg' }],
-  },
-  logoMarkInner: { transform: [{ rotate: '-45deg' }] },
-  tagline: { textAlign: 'center', color: palette.body, fontSize: fontSize.md, marginTop: spacing.sm },
-
-  welcome: { fontSize: fontSize.xxl, fontWeight: fontWeight.bold, color: ink, marginTop: spacing.xxl },
+  welcome: { fontSize: fontSize.xxl, fontWeight: fontWeight.bold, color: ink },
   subtitle: { fontSize: fontSize.md, color: palette.body, marginTop: spacing.xs, marginBottom: spacing.xl },
 
-  fieldLabel: { fontSize: fontSize.md, fontWeight: fontWeight.bold, color: palette.label, marginBottom: spacing.sm },
+  fieldLabel: { fontSize: fontSize.sm, fontWeight: fontWeight.semibold, color: palette.label, marginBottom: spacing.sm },
 
   metaRow: {
     flexDirection: 'row',
@@ -270,7 +254,7 @@ const styles = StyleSheet.create({
 
   ctaWrap: { marginTop: spacing.xl, borderRadius: radius.full, overflow: 'hidden' },
   cta: {
-    height: 60,
+    height: 56,
     borderRadius: radius.full,
     flexDirection: 'row',
     alignItems: 'center',
@@ -279,27 +263,9 @@ const styles = StyleSheet.create({
   },
   ctaText: { color: '#FFFFFF', fontSize: fontSize.lg, fontWeight: fontWeight.bold },
 
-  dividerRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginTop: spacing.xxl },
-  dividerLine: { flex: 1, height: 1, backgroundColor: palette.divider },
-  dividerText: { color: palette.faint, fontSize: fontSize.sm },
+  tagline: { textAlign: 'center', color: palette.faint, fontSize: fontSize.sm, fontWeight: fontWeight.medium, letterSpacing: 0.3 },
 
-  partnerRow: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.lg },
-  partnerCard: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    minHeight: 64,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: palette.cardBorder,
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: spacing.md,
-  },
-  partnerText: { color: palette.label, fontSize: fontSize.md, fontWeight: fontWeight.semibold, textAlign: 'center' },
-
-  footer: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: spacing.lg },
+  footer: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap' },
   footerText: { color: palette.faint, fontSize: fontSize.xs },
   footerLink: { textDecorationLine: 'underline', color: palette.body },
 });
