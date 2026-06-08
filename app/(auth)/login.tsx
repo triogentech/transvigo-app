@@ -21,7 +21,7 @@ import { Input } from '@/components/ui/Input';
 import { useAuthStore } from '@/store/auth.store';
 import { showToast } from '@/store/toast.store';
 
-const logo = require('../../assets/images/transvigo-logo.jpeg');
+const logo = require('../../assets/images/transvigo-logo.png');
 
 // Fixed light brand surface (predates auth), so it uses a local palette.
 const ink = brand.navy;
