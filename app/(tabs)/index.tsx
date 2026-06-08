@@ -199,9 +199,14 @@ export default function HomeScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={brand.navy} />}
       >
         {/* Greeting */}
-        <View style={styles.greetingBlock}>
-          <Text style={[styles.greetingSub, { color: c.textSecondary }]}>{greeting()},</Text>
-          <Text style={[styles.greetingName, { color: brand.navy }]}>{name}</Text>
+        <View style={styles.greetingRow}>
+          <View style={styles.greetingBlock}>
+            <Text style={[styles.greetingSub, { color: c.textSecondary }]}>{greeting()},</Text>
+            <Text style={[styles.greetingName, { color: brand.navy }]}>{name}</Text>
+          </View>
+          <Pressable onPress={() => router.push('/notifications')} hitSlop={8} style={[styles.bell, { backgroundColor: c.bgSurface, borderColor: c.border }]}>
+            <Ionicons name="notifications-outline" size={22} color={c.textPrimary} />
+          </Pressable>
         </View>
 
         {/* Active trip / empty state */}
@@ -272,6 +277,8 @@ const cardShadow = {
 const styles = StyleSheet.create({
   content: { paddingHorizontal: spacing.lg, gap: spacing.xl },
 
+  greetingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  bell: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
   greetingBlock: { gap: 2 },
   greetingSub: { fontSize: fontSize.lg, fontWeight: fontWeight.semibold },
   greetingName: { fontSize: fontSize.xl, fontWeight: fontWeight.bold },

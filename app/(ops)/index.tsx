@@ -38,8 +38,15 @@ export default function OpsHub() {
       style={{ flex: 1, backgroundColor: c.bgPage }}
       contentContainerStyle={[styles.content, { paddingTop: insets.top + spacing.lg, paddingBottom: insets.bottom + spacing.xxl }]}
     >
-      <Text style={[styles.sub, { color: c.textSecondary }]}>Operations Hub</Text>
-      <Text style={[styles.title, { color: brand.navy }]}>{user?.username ?? 'Operations'}</Text>
+      <View style={styles.headRow}>
+        <View>
+          <Text style={[styles.sub, { color: c.textSecondary }]}>Operations Hub</Text>
+          <Text style={[styles.title, { color: brand.navy }]}>{user?.username ?? 'Operations'}</Text>
+        </View>
+        <Pressable onPress={() => router.push('/notifications')} hitSlop={8} style={[styles.bell, { backgroundColor: c.bgSurface, borderColor: c.border }]}>
+          <Ionicons name="notifications-outline" size={22} color={c.textPrimary} />
+        </Pressable>
+      </View>
 
       <View style={styles.stats}>
         <Card style={styles.stat}>
@@ -69,8 +76,10 @@ export default function OpsHub() {
 
 const styles = StyleSheet.create({
   content: { padding: spacing.lg, gap: spacing.md },
+  headRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: spacing.sm },
+  bell: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
   sub: { fontSize: fontSize.md, fontWeight: fontWeight.semibold },
-  title: { fontSize: fontSize.xl, fontWeight: fontWeight.bold, marginBottom: spacing.sm },
+  title: { fontSize: fontSize.xl, fontWeight: fontWeight.bold },
   stats: { flexDirection: 'row', gap: spacing.md },
   stat: { flex: 1, alignItems: 'center', gap: 2, paddingVertical: spacing.md },
   statNum: { fontSize: fontSize.xxl, fontWeight: fontWeight.heavy },
