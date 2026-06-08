@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { brand, fontSize, fontWeight, spacing, status as st, useColors } from '@/theme';
 import { Card } from '@/components/ui/Card';
+import { AppearanceSelector } from '@/components/AppearanceSelector';
 import { useAuthStore } from '@/store/auth.store';
 import { initialsOf } from '@/utils/format';
 
@@ -40,6 +41,10 @@ export default function OpsProfile() {
       <Card style={{ padding: 0 }}>
         <Row icon="key-outline" label="Change Password" onPress={() => router.push('/(auth)/change-password')} />
         <Row icon="information-circle-outline" label="App Version" right={<Text style={{ color: c.textTertiary, fontSize: fontSize.sm }}>{version}</Text>} />
+      </Card>
+
+      <Card>
+        <AppearanceSelector />
       </Card>
 
       <Pressable onPress={confirmSignOut} style={styles.signOut}>
