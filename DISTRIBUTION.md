@@ -140,9 +140,11 @@ Play Store then **auto-updates** the app on every device, and we've also wired
   is `remote`, so EAS tracks the version.
 - **`eas.json` `submit.production`** uploads to the Play **internal** track via a
   Google service-account key.
-- **In-app updates:** the `expo-in-app-updates` plugin + `useInAppUpdate()` (mounted in
-  `app/_layout.tsx`) check Google Play on launch and start a *flexible* update. It's a
-  no-op on iOS and on non-Play-Store installs, so it never breaks dev/sideloaded builds.
+- **In-app updates:** the `expo-in-app-updates` native module (auto-linked — it is *not*
+  a config plugin, so it is **not** in `app.json` `plugins`) + `useInAppUpdate()`
+  (mounted in `app/_layout.tsx`) check Google Play on launch and start a *flexible*
+  update. It's a no-op on iOS and on non-Play-Store installs, so it never breaks
+  dev/sideloaded builds.
 
 ### One-time setup
 1. **Create the app in [Google Play Console]** (≈$25 one-time dev account), package
@@ -155,8 +157,8 @@ Play Store then **auto-updates** the app on every device, and we've also wired
    hand in the console (to register the app signing key). Build one with
    `eas build -p android --profile production`, download the `.aab`, and upload it to an
    **Internal testing** release. After that, `eas submit` works.
-4. **Apply the native plugin.** Because `android/` is committed, regenerate it so the
-   `expo-in-app-updates` native code is included:
+4. **Apply the native module.** Because `android/` is committed, regenerate it so the
+   auto-linked `expo-in-app-updates` native code is included:
    ```bash
    npx expo prebuild -p android --clean
    ```

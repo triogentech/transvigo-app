@@ -41,7 +41,6 @@
       "expo-router",
       "expo-secure-store",
       "expo-font",
-      "expo-in-app-updates",
       [
         "expo-camera",
         { "cameraPermission": "TransVigo needs camera access for odometer and receipt photos" }
