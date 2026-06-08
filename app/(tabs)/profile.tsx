@@ -129,7 +129,7 @@ export default function ProfileScreen() {
       </SettingsGroup>
 
       <SettingsGroup title="SUPPORT">
-        <SettingsRow icon="call-outline" label="Contact Support" onPress={() => void Linking.openURL('mailto:support@transvigo.com')} />
+        <SettingsRow icon="call-outline" label="Contact Support" onPress={() => void Linking.openURL('mailto:info@transvigo.in')} />
         <SettingsRow icon="document-text-outline" label="About TransVigo" onPress={() => Alert.alert('TransVigo Driver', `Version ${version}`)} />
       </SettingsGroup>
 
