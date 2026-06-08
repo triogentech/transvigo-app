@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { fontFamily, fontSize, fontWeight, radius, spacing, status as st, useColors } from '@/theme';
+import { brand, fontFamily, fontSize, fontWeight, radius, spacing, status as st, useColors } from '@/theme';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { Card } from '@/components/ui/Card';
 import { StatusBadge } from '@/components/ui/StatusBadge';
@@ -81,6 +82,8 @@ export default function TicketDetailScreen() {
             ) : null}
           </Card>
 
+          {ticket.assignedToUser ? <AssigneeCard assignee={ticket.assignedToUser} /> : null}
+
           <Card>
             <Text style={[styles.sectionTitle, { color: c.textPrimary }]}>Ticket Journey</Text>
             <TicketHistory entries={ticket.history ?? []} />
@@ -137,7 +140,50 @@ function DetailRow({ label, value, mono }: { label: string; value: string; mono?
   );
 }
 
+function AssigneeCard({ assignee }: { assignee: NonNullable<Ticket['assignedToUser']> }) {
+  const c = useColors();
+  const name = assignee.staff?.fullName ?? assignee.username;
+  const phone = assignee.staff ? `${assignee.staff.countryDialCode}${assignee.staff.contactNumber}` : null;
+  const email = assignee.email ?? null;
+  const digits = phone ? phone.replace(/[^0-9]/g, '') : '';
+  return (
+    <Card style={{ gap: spacing.sm }}>
+      <Text style={[styles.sectionTitle, { color: c.textPrimary }]}>Assigned To</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+        <View style={[styles.assigneeAvatar, { backgroundColor: brand.navy }]}>
+          <Ionicons name="person" size={18} color="#fff" />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={{ color: c.textPrimary, fontSize: fontSize.md, fontWeight: fontWeight.semibold }}>{name}</Text>
+          {email ? <Text style={{ color: c.textSecondary, fontSize: fontSize.sm }}>{email}</Text> : null}
+          {phone ? <Text style={{ color: c.textSecondary, fontSize: fontSize.sm }}>{phone}</Text> : null}
+        </View>
+      </View>
+      {phone || email ? (
+        <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+          {phone ? <ContactBtn icon="call" label="Call" color={st.success} onPress={() => void Linking.openURL(`tel:${phone}`)} /> : null}
+          {phone ? <ContactBtn icon="logo-whatsapp" label="WhatsApp" color="#25D366" onPress={() => void Linking.openURL(`https://wa.me/${digits}`)} /> : null}
+          {email ? <ContactBtn icon="mail" label="Email" color={brand.teal} onPress={() => void Linking.openURL(`mailto:${email}`)} /> : null}
+        </View>
+      ) : (
+        <Text style={{ color: c.textTertiary, fontSize: fontSize.sm }}>No contact details available.</Text>
+      )}
+    </Card>
+  );
+}
+
+function ContactBtn({ icon, label, color, onPress }: { icon: keyof typeof Ionicons.glyphMap; label: string; color: string; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} style={[styles.contactBtn, { backgroundColor: `${color}1A`, borderColor: `${color}33` }]}>
+      <Ionicons name={icon} size={16} color={color} />
+      <Text style={{ color, fontSize: fontSize.sm, fontWeight: fontWeight.semibold }}>{label}</Text>
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
+  assigneeAvatar: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  contactBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs, paddingVertical: spacing.sm, borderRadius: radius.md, borderWidth: 1 },
   content: { padding: spacing.lg, gap: spacing.md },
   gap: { gap: spacing.sm },
   badgeRow: { flexDirection: 'row', gap: spacing.sm },

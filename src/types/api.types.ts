@@ -157,7 +157,12 @@ export interface Ticket {
   createdAt: string;
   vehicle?: VehicleRef | null;
   driver?: { id: string; fullName: string } | null;
-  assignedToUser?: { id: string; username: string } | null;
+  assignedToUser?: {
+    id: string;
+    username: string;
+    email?: string;
+    staff?: { fullName: string; countryDialCode: string; contactNumber: string } | null;
+  } | null;
   history?: TicketHistoryEntry[];
 }
 
