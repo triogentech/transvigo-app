@@ -127,6 +127,59 @@ Same install steps on the phone. (No auto-update — you re-send a new file each
 
 ---
 
+## 5. Google Play Store releases & in-app updates
+
+For a real rollout, publish to the **Play Store** instead of sharing APK links. The
+Play Store then **auto-updates** the app on every device, and we've also wired
+**in-app update prompts** so users get nudged immediately when a new version is live.
+
+### What's already configured
+- **`eas.json` `production` profile** builds an **AAB** (`buildType: app-bundle`, the
+  format the Play Store requires) with **`autoIncrement: true`** (versionCode bumps
+  automatically each build — Play Store rejects duplicate versionCodes). `cli.appVersionSource`
+  is `remote`, so EAS tracks the version.
+- **`eas.json` `submit.production`** uploads to the Play **internal** track via a
+  Google service-account key.
+- **In-app updates:** the `expo-in-app-updates` plugin + `useInAppUpdate()` (mounted in
+  `app/_layout.tsx`) check Google Play on launch and start a *flexible* update. It's a
+  no-op on iOS and on non-Play-Store installs, so it never breaks dev/sideloaded builds.
+
+### One-time setup
+1. **Create the app in [Google Play Console]** (≈$25 one-time dev account), package
+   `com.transvigo.driver`. Complete the store listing + content rating.
+2. **Create a Google service account** (Play Console → Setup → API access → link a GCP
+   project → create service account → grant *Release* permissions), download its JSON
+   key, and save it as **`google-play-service-account.json`** in the app root.
+   It's gitignored — never commit it.
+3. **First upload must be manual:** Play requires the very first AAB to be uploaded by
+   hand in the console (to register the app signing key). Build one with
+   `eas build -p android --profile production`, download the `.aab`, and upload it to an
+   **Internal testing** release. After that, `eas submit` works.
+4. **Apply the native plugin.** Because `android/` is committed, regenerate it so the
+   `expo-in-app-updates` native code is included:
+   ```bash
+   npx expo prebuild -p android --clean
+   ```
+   (or delete `android/` to let EAS prebuild it on the server.)
+
+### Each release
+```bash
+# 1. (optional) bump the human-facing version in app.json — versionCode is automatic
+# 2. build the AAB (versionCode auto-increments)
+eas build --platform android --profile production
+# 3. submit to the Play Store internal track
+eas submit --platform android --profile production --latest
+```
+Promote **Internal → Closed/Open testing → Production** in the Play Console when ready.
+Once a release reaches a track a device is on, the user gets the update via the Play
+Store automatically **and** the in-app prompt on next launch.
+
+> Switch the `submit.production.track` in `eas.json` from `internal` to `production`
+> when you're ready for public rollout. For a forced/blocking update, call
+> `checkAndStartUpdate(true)` (immediate) instead of `false` in `useInAppUpdate.ts`.
+
+---
+
 ## Pre-flight checklist (before sending to real drivers)
 
 - [ ] **Backend is live over HTTPS** — `curl -I https://transvigo-be.transvigo.in/`

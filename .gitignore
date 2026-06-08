@@ -36,6 +36,8 @@ ios/.xcode.env.local
 # Env / secrets
 .env
 .env*.local
+google-play-service-account.json
+*-service-account.json
 
 # Logs & OS
 *.log
