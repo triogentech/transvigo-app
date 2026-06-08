@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
+import * as ImagePicker from 'expo-image-picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { brand, fontSize, fontWeight, radius, spacing, status as st, useColors } from '@/theme';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
@@ -51,8 +52,27 @@ export default function NewTicketScreen() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const takePhoto = async (): Promise<void> => {
+    const perm = await ImagePicker.requestCameraPermissionsAsync();
+    if (!perm.granted) return showToast({ type: 'error', message: 'Camera permission denied' });
+    const result = await ImagePicker.launchCameraAsync({ quality: 0.5 });
+    if (!result.canceled && result.assets[0]) setPhotoUri(result.assets[0].uri);
+  };
+  const pickPhoto = async (): Promise<void> => {
+    const result = await ImagePicker.launchImageLibraryAsync({ quality: 0.5 });
+    if (!result.canceled && result.assets[0]) setPhotoUri(result.assets[0].uri);
+  };
+  const addPhoto = (): void => {
+    Alert.alert('Add Photo', 'Attach a photo to this ticket', [
+      { text: 'Take Photo', onPress: () => void takePhoto() },
+      { text: 'Choose from Library', onPress: () => void pickPhoto() },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  };
 
   useEffect(() => {
     void requestLocation();
@@ -92,6 +112,14 @@ export default function NewTicketScreen() {
     }
     try {
       const created = await ticketsApi.createTicket(body);
+      // Best-effort photo upload — never block the raised ticket on it.
+      if (photoUri) {
+        try {
+          await ticketsApi.uploadTicketPhoto(created.id, photoUri);
+        } catch {
+          showToast({ type: 'warning', message: 'Ticket raised, but the photo failed to upload' });
+        }
+      }
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       showToast({ type: 'success', message: `Ticket ${created.ticketNumber} raised` });
       router.replace(`/ticket/${created.id}`);
@@ -195,6 +223,25 @@ export default function NewTicketScreen() {
           />
           <Input label="Location" value={location} onChangeText={setLocation} placeholder="Where are you?" leftIcon="location-outline" />
 
+          <Text style={[styles.label, { color: c.textPrimary }]}>Photo (optional)</Text>
+          {photoUri ? (
+            <View style={styles.photoWrap}>
+              <Image source={{ uri: photoUri }} style={styles.photo} resizeMode="cover" />
+              <Pressable onPress={() => setPhotoUri(null)} style={styles.photoRemove} hitSlop={8}>
+                <Ionicons name="close-circle" size={26} color="#fff" />
+              </Pressable>
+              <Pressable onPress={addPhoto} style={[styles.photoChange, { backgroundColor: c.bgSurface, borderColor: c.border }]}>
+                <Ionicons name="camera-reverse-outline" size={16} color={c.textSecondary} />
+                <Text style={{ color: c.textSecondary, fontSize: fontSize.sm }}>Change</Text>
+              </Pressable>
+            </View>
+          ) : (
+            <Pressable onPress={addPhoto} style={[styles.photoBtn, { borderColor: c.border, backgroundColor: c.bgSunken }]}>
+              <Ionicons name="camera-outline" size={22} color={brand.teal} />
+              <Text style={{ color: c.textSecondary, fontSize: fontSize.sm }}>Add a photo of the issue</Text>
+            </Pressable>
+          )}
+
           {error ? <Text style={[styles.error, { color: c.danger }]}>{error}</Text> : null}
 
           <Button size="lg" fullWidth onPress={submit} loading={submitting} leftIcon="send">
@@ -230,4 +277,21 @@ const styles = StyleSheet.create({
   warning: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, padding: spacing.md, borderRadius: radius.md },
   warningText: { flex: 1, fontSize: fontSize.sm },
   error: { fontSize: fontSize.sm },
+  photoBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    minHeight: 56,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderRadius: radius.md,
+  },
+  photoWrap: { position: 'relative' },
+  photo: { width: '100%', height: 180, borderRadius: radius.md },
+  photoRemove: { position: 'absolute', top: 6, right: 6 },
+  photoChange: {
+    position: 'absolute', bottom: 8, left: 8, flexDirection: 'row', alignItems: 'center',
+    gap: 4, paddingHorizontal: spacing.sm, paddingVertical: 4, borderRadius: radius.full, borderWidth: 1,
+  },
 });

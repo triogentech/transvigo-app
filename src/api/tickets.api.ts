@@ -22,3 +22,13 @@ export async function createTicket(body: CreateTicketBody): Promise<Ticket> {
   const res = await api.post<Ticket>('/api/tickets', body);
   return res.data;
 }
+
+/** Attach a photo (local file URI) to a ticket via multipart upload. */
+export async function uploadTicketPhoto(id: string, uri: string): Promise<Ticket> {
+  const form = new FormData();
+  form.append('file', { uri, name: 'photo.jpg', type: 'image/jpeg' } as unknown as Blob);
+  const res = await api.post<Ticket>(`/api/tickets/${id}/photo`, form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return res.data;
+}

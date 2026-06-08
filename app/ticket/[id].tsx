@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -78,6 +78,12 @@ export default function TicketDetailScreen() {
               <View style={{ marginTop: spacing.md }}>
                 <Text style={[styles.fieldLabel, { color: c.textSecondary }]}>Resolution</Text>
                 <Text style={[styles.body, { color: c.textPrimary }]}>{ticket.resolution}</Text>
+              </View>
+            ) : null}
+            {ticket.photoUrl ? (
+              <View style={{ marginTop: spacing.md }}>
+                <Text style={[styles.fieldLabel, { color: c.textSecondary }]}>Photo</Text>
+                <Image source={{ uri: ticket.photoUrl }} style={styles.ticketPhoto} resizeMode="cover" />
               </View>
             ) : null}
           </Card>
@@ -182,6 +188,7 @@ function ContactBtn({ icon, label, color, onPress }: { icon: keyof typeof Ionico
 }
 
 const styles = StyleSheet.create({
+  ticketPhoto: { width: '100%', height: 200, borderRadius: 10, marginTop: 6 },
   assigneeAvatar: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   contactBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs, paddingVertical: spacing.sm, borderRadius: radius.md, borderWidth: 1 },
   content: { padding: spacing.lg, gap: spacing.md },

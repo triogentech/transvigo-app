@@ -154,6 +154,7 @@ export interface Ticket {
   resolvedAt: string | null;
   isResolvedOnTime: boolean | null;
   resolution: string | null;
+  photoUrl?: string | null;
   createdAt: string;
   vehicle?: VehicleRef | null;
   driver?: { id: string; fullName: string } | null;
