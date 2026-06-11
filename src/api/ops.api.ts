@@ -54,6 +54,12 @@ export const getInvoices = () => list<SupplierInvoice>('/api/invoices');
 export const createInvoice = (body: CreateInvoiceBody) => api.post<SupplierInvoice>('/api/invoices', body).then((r) => r.data);
 export const setInvoiceStatus = (id: string, paymentStatus: InvoicePaymentStatus) =>
   api.put<SupplierInvoice>(`/api/invoices/${id}/payment`, { paymentStatus }).then((r) => r.data);
+export const uploadInvoicePhoto = async (id: string, uri: string): Promise<SupplierInvoice> => {
+  const form = new FormData();
+  form.append('file', { uri, name: 'invoice.jpg', type: 'image/jpeg' } as unknown as Blob);
+  const res = await api.post<SupplierInvoice>(`/api/invoices/${id}/photo`, form, { headers: { 'Content-Type': 'multipart/form-data' } });
+  return res.data;
+};
 
 // ── Maintenance (garage logs) ──
 export const getGarageLogs = () => list<GarageLog>('/api/garage-logs');

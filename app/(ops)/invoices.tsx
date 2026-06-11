@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { fontSize, fontWeight, radius, spacing, useColors } from '@/theme';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
@@ -30,12 +32,31 @@ export default function OpsInvoices() {
   const [jobCards, setJobCards] = useState<SelectOption[]>([]);
   const [vendors, setVendors] = useState<SelectOption[]>([]);
   const [form, setForm] = useState(EMPTY);
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
 
   useEffect(() => {
     ops.getVehicleOptions().then(setVehicles).catch(() => undefined);
     ops.getJobCardOptions().then(setJobCards).catch(() => undefined);
     ops.getVendorOptions().then(setVendors).catch(() => undefined);
   }, []);
+
+  const takePhoto = async (): Promise<void> => {
+    const perm = await ImagePicker.requestCameraPermissionsAsync();
+    if (!perm.granted) return showToast({ type: 'error', message: 'Camera permission denied' });
+    const result = await ImagePicker.launchCameraAsync({ quality: 0.5 });
+    if (!result.canceled && result.assets[0]) setPhotoUri(result.assets[0].uri);
+  };
+  const pickPhoto = async (): Promise<void> => {
+    const result = await ImagePicker.launchImageLibraryAsync({ quality: 0.5 });
+    if (!result.canceled && result.assets[0]) setPhotoUri(result.assets[0].uri);
+  };
+  const addPhoto = (): void => {
+    Alert.alert('Invoice Photo', 'Attach a photo of the invoice', [
+      { text: 'Take Photo', onPress: () => void takePhoto() },
+      { text: 'Choose from Library', onPress: () => void pickPhoto() },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  };
 
   const submit = useCallback(async () => {
     if (!form.invoiceNumber.trim()) return showToast({ type: 'error', message: 'Enter the supplied invoice number' });
@@ -49,11 +70,16 @@ export default function OpsInvoices() {
         totalAmount: form.totalAmount ? Number(form.totalAmount) : 0,
         paymentStatus: form.paymentStatus,
       });
+      // Best-effort photo upload — never block the registered invoice on it.
+      if (photoUri) {
+        try { await ops.uploadInvoicePhoto(inv.id, photoUri); }
+        catch { showToast({ type: 'warning', message: 'Invoice saved, but the photo failed to upload' }); }
+      }
       showToast({ type: 'success', message: `Registered ${inv.refNumber}` });
-      setOpen(false); setForm(EMPTY); await reload();
+      setOpen(false); setForm(EMPTY); setPhotoUri(null); await reload();
     } catch (e) { showToast({ type: 'error', message: errMessage(e) }); }
     finally { setSubmitting(false); }
-  }, [form, reload]);
+  }, [form, photoUri, reload]);
 
   const setStatus = async (id: string, s: InvoicePaymentStatus) => {
     try { await ops.setInvoiceStatus(id, s); await reload(); }
@@ -74,6 +100,7 @@ export default function OpsInvoices() {
             {i.invoiceNumber} · {i.vehicle?.vehicleNumber ?? '—'}
             {i.jobCard ? ` · ${i.jobCard.jobCardNumber}` : ''} · ₹{num(i.totalAmount).toLocaleString('en-IN')}
           </Text>
+          {i.photoUrl ? <Image source={{ uri: i.photoUrl }} style={styles.thumb} resizeMode="cover" /> : null}
           <Select value={i.paymentStatus} onChange={(v) => setStatus(i.id, v as InvoicePaymentStatus)} options={STATUS_OPTS} label="Set status" />
         </Card>
       ))}
@@ -85,6 +112,23 @@ export default function OpsInvoices() {
         <Select value={form.jobCardId || null} onChange={(v) => setForm((f) => ({ ...f, jobCardId: v }))} options={jobCards} label="Job Card (optional)" placeholder="None" searchable />
         <Input label="Total Amount (₹)" value={form.totalAmount} onChangeText={(v) => setForm((f) => ({ ...f, totalAmount: v }))} keyboardType="numeric" />
         <Select value={form.paymentStatus} onChange={(v) => setForm((f) => ({ ...f, paymentStatus: v as InvoicePaymentStatus }))} options={STATUS_OPTS} label="Payment Status" />
+
+        {photoUri ? (
+          <View style={styles.photoWrap}>
+            <Image source={{ uri: photoUri }} style={styles.photo} resizeMode="cover" />
+            <Pressable onPress={() => setPhotoUri(null)} hitSlop={8} style={styles.photoRemove}>
+              <Ionicons name="close-circle" size={26} color="#fff" />
+            </Pressable>
+            <Pressable onPress={addPhoto} style={[styles.photoChange, { backgroundColor: c.bgSurface, borderColor: c.border }]}>
+              <Text style={{ color: c.textSecondary, fontSize: fontSize.xs, fontWeight: fontWeight.semibold }}>Change</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <Pressable onPress={addPhoto} style={[styles.photoBtn, { borderColor: c.border, backgroundColor: c.bgSunken }]}>
+            <Ionicons name="camera-outline" size={20} color={c.textSecondary} />
+            <Text style={{ color: c.textSecondary, fontSize: fontSize.sm }}>Attach invoice photo</Text>
+          </Pressable>
+        )}
       </OpsModal>
     </OpsListScaffold>
   );
@@ -96,4 +140,10 @@ const styles = StyleSheet.create({
   ref: { fontSize: fontSize.md, fontWeight: fontWeight.bold },
   pill: { paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.full },
   meta: { fontSize: fontSize.sm, marginBottom: spacing.xs },
+  thumb: { width: '100%', height: 140, borderRadius: radius.md, marginBottom: spacing.xs },
+  photoBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs, borderWidth: 1, borderStyle: 'dashed', borderRadius: radius.md, paddingVertical: spacing.md },
+  photoWrap: { position: 'relative' },
+  photo: { width: '100%', height: 180, borderRadius: radius.md },
+  photoRemove: { position: 'absolute', top: 6, right: 6 },
+  photoChange: { position: 'absolute', bottom: 6, right: 6, borderWidth: 1, borderRadius: radius.full, paddingHorizontal: spacing.sm, paddingVertical: 3 },
 });

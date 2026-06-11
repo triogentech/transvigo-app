@@ -97,6 +97,7 @@ export interface SupplierInvoice {
   jobCard?: { id: string; jobCardNumber: string } | null;
   totalAmount: string | number;
   paymentStatus: InvoicePaymentStatus;
+  photoUrl?: string | null;
   createdAt: string;
 }
 export interface CreateInvoiceBody {
