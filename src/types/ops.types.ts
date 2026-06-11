@@ -75,6 +75,18 @@ export interface CreateTyreMovementBody {
   odometerAtEvent?: number;
 }
 
+export type TyreMovementDirection = 'in' | 'out';
+export interface TyreMovementLogBody {
+  direction: TyreMovementDirection;
+  vehicleId: string;
+  serialNumber: string;
+  position: string;      // tyre_position enum value (FL/FR/RL1…/spare)
+  odometerKm: number;
+  brand?: string | null;          // tyre-in only
+  removalReason?: string | null;  // tyre-out only
+  nextStatus: TyreStatus;
+}
+
 export type InvoicePaymentStatus = 'on_credit' | 'fully_paid';
 export interface SupplierInvoice {
   id: string;

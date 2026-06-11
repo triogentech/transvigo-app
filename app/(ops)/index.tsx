@@ -14,7 +14,7 @@ const TILES: Tile[] = [
   { label: 'Tickets', icon: 'alert-circle-outline', route: '/(ops)/tickets', color: '#EA580C' },
   { label: 'Job Cards', icon: 'construct-outline', route: '/(ops)/job-cards', color: '#2563EB' },
   { label: 'Spare Parts', icon: 'cube-outline', route: '/(ops)/spare-parts', color: '#16A34A' },
-  { label: 'Tyre Hub', icon: 'ellipse-outline', route: '/(ops)/tyres', color: '#7C3AED' },
+  { label: 'Tyre Management', icon: 'ellipse-outline', route: '/(ops)/tyres', color: '#7C3AED' },
   { label: 'Invoices', icon: 'receipt-outline', route: '/(ops)/invoices', color: '#0EA5C5' },
   { label: 'Maintenance', icon: 'build-outline', route: '/(ops)/maintenance', color: '#D97706' },
   { label: 'Trips', icon: 'map-outline', route: '/(ops)/trips', color: brand.navy },

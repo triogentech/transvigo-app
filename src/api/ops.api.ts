@@ -4,6 +4,7 @@ import type {
   CreateInvoiceBody, CreateIssueSlipBody, CreateJobCardBody, CreateSparePartBody, CreateTyreBody,
   CreateTyreMovementBody, GarageLog, InvoicePaymentStatus, JobCard, JobCardStatus,
   SelectOption, SparePart, SpareIssueSlip, StockAdjustmentBody, SupplierInvoice, Tyre,
+  TyreMovementLogBody,
 } from '@/types/ops.types';
 
 const list = async <T>(path: string): Promise<T[]> => {
@@ -43,6 +44,8 @@ export const createIssueSlip = (body: CreateIssueSlipBody) =>
 // ── Tyres ──
 export const getTyres = () => list<Tyre>('/api/tyres');
 export const createTyre = (body: CreateTyreBody) => api.post<Tyre>('/api/tyres', body).then((r) => r.data);
+export const tyreMovementLog = (body: TyreMovementLogBody) =>
+  api.post('/api/tyres/movement-log', body).then((r) => r.data);
 export const addTyreMovement = (id: string, body: CreateTyreMovementBody) =>
   api.post<Tyre>(`/api/tyres/${id}/movement`, body).then((r) => r.data);
 
