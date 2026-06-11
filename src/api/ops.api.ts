@@ -1,9 +1,9 @@
 import { api } from './client';
 import type { Paginated } from '@/types/api.types';
 import type {
-  CreateInvoiceBody, CreateJobCardBody, CreateSparePartBody, CreateTyreBody,
-  CreateTyreMovementBody, GarageLog, InvoiceStatus, JobCard, JobCardStatus,
-  SelectOption, SparePart, StockAdjustmentBody, SupplierInvoice, Tyre,
+  CreateInvoiceBody, CreateIssueSlipBody, CreateJobCardBody, CreateSparePartBody, CreateTyreBody,
+  CreateTyreMovementBody, GarageLog, InvoicePaymentStatus, JobCard, JobCardStatus,
+  SelectOption, SparePart, SpareIssueSlip, StockAdjustmentBody, SupplierInvoice, Tyre,
 } from '@/types/ops.types';
 
 const list = async <T>(path: string): Promise<T[]> => {
@@ -29,11 +29,16 @@ export const getAssignees = async (): Promise<SelectOption[]> => {
   return res.data;
 };
 
-// ── Spare Parts ──
+// ── Spare Parts (catalog) ──
 export const getSpareParts = () => list<SparePart>('/api/spare-parts');
 export const createSparePart = (body: CreateSparePartBody) => api.post<SparePart>('/api/spare-parts', body).then((r) => r.data);
 export const adjustStock = (id: string, body: StockAdjustmentBody) =>
   api.post<SparePart>(`/api/spare-parts/${id}/stock-adjustment`, body).then((r) => r.data);
+
+// ── Spare-part issue slips (free-text line items, SPI numbering) ──
+export const getIssueSlips = () => list<SpareIssueSlip>('/api/spare-issue-slips');
+export const createIssueSlip = (body: CreateIssueSlipBody) =>
+  api.post<SpareIssueSlip>('/api/spare-issue-slips', body).then((r) => r.data);
 
 // ── Tyres ──
 export const getTyres = () => list<Tyre>('/api/tyres');
@@ -44,8 +49,8 @@ export const addTyreMovement = (id: string, body: CreateTyreMovementBody) =>
 // ── Supplier Invoices ──
 export const getInvoices = () => list<SupplierInvoice>('/api/invoices');
 export const createInvoice = (body: CreateInvoiceBody) => api.post<SupplierInvoice>('/api/invoices', body).then((r) => r.data);
-export const setInvoiceStatus = (id: string, status: InvoiceStatus) =>
-  api.put<SupplierInvoice>(`/api/invoices/${id}/payment`, { status }).then((r) => r.data);
+export const setInvoiceStatus = (id: string, paymentStatus: InvoicePaymentStatus) =>
+  api.put<SupplierInvoice>(`/api/invoices/${id}/payment`, { paymentStatus }).then((r) => r.data);
 
 // ── Maintenance (garage logs) ──
 export const getGarageLogs = () => list<GarageLog>('/api/garage-logs');
@@ -57,5 +62,13 @@ export const getVehicleOptions = async (): Promise<SelectOption[]> => {
 };
 export const getGarageOptions = async (): Promise<SelectOption[]> => {
   const res = await api.get<SelectOption[]>('/api/select/garages');
+  return res.data;
+};
+export const getJobCardOptions = async (): Promise<SelectOption[]> => {
+  const res = await api.get<SelectOption[]>('/api/select/job-cards');
+  return res.data;
+};
+export const getVendorOptions = async (): Promise<SelectOption[]> => {
+  const res = await api.get<SelectOption[]>('/api/select/spare-vendors');
   return res.data;
 };

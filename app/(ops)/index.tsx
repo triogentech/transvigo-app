@@ -26,11 +26,11 @@ export default function OpsHub() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const [openTickets, setOpenTickets] = useState<number | null>(null);
-  const [flagged, setFlagged] = useState<number | null>(null);
+  const [onCredit, setOnCredit] = useState<number | null>(null);
 
   useEffect(() => {
     ticketsApi.getTicketsPage({ status: 'open', pageSize: 1 }).then((r) => setOpenTickets(r.pagination.total)).catch(() => undefined);
-    ops.getInvoices().then((rows) => setFlagged(rows.filter((i) => i.isFlagged).length)).catch(() => undefined);
+    ops.getInvoices().then((rows) => setOnCredit(rows.filter((i) => i.paymentStatus === 'on_credit').length)).catch(() => undefined);
   }, []);
 
   return (
@@ -54,8 +54,8 @@ export default function OpsHub() {
           <Text style={[styles.statLabel, { color: c.textSecondary }]}>Open Tickets</Text>
         </Card>
         <Card style={styles.stat}>
-          <Text style={[styles.statNum, { color: flagged ? st.warning : c.textPrimary }]}>{flagged ?? '—'}</Text>
-          <Text style={[styles.statLabel, { color: c.textSecondary }]}>Flagged Invoices</Text>
+          <Text style={[styles.statNum, { color: onCredit ? st.warning : c.textPrimary }]}>{onCredit ?? '—'}</Text>
+          <Text style={[styles.statLabel, { color: c.textSecondary }]}>On Credit</Text>
         </Card>
       </View>
 

@@ -75,25 +75,59 @@ export interface CreateTyreMovementBody {
   odometerAtEvent?: number;
 }
 
-export type InvoiceStatus = 'pending' | 'paid' | 'outstanding';
+export type InvoicePaymentStatus = 'on_credit' | 'fully_paid';
 export interface SupplierInvoice {
   id: string;
   refNumber: string;
   invoiceNumber: string;
   vendor?: { id: string; vendorName: string } | null;
   vehicle?: { id: string; vehicleNumber: string } | null;
-  estimatedAmount: string | number;
-  billedAmount: string | number;
-  variancePct: string | number;
-  isFlagged: boolean;
-  status: InvoiceStatus;
+  jobCard?: { id: string; jobCardNumber: string } | null;
+  totalAmount: string | number;
+  paymentStatus: InvoicePaymentStatus;
   createdAt: string;
 }
 export interface CreateInvoiceBody {
   invoiceNumber: string;
   vehicleId?: string | null;
-  estimatedAmount?: number;
-  billedAmount?: number;
+  jobCardId?: string | null;
+  vendorId?: string | null;
+  totalAmount?: number;
+  paymentStatus?: InvoicePaymentStatus;
+}
+
+// ── Spare-part issue slip (free-text line items) ──
+export interface SpareIssueSlipItem {
+  id: string;
+  partName: string;
+  qtyIssued: string | number;
+  unitCost: string | number;
+  totalCost: string | number;
+}
+export interface SpareIssueSlip {
+  id: string;
+  slipNumber: string;
+  vehicle?: { id: string; vehicleNumber: string } | null;
+  jobCard?: { id: string; jobCardNumber: string } | null;
+  vendor?: { id: string; vendorName: string } | null;
+  garage?: { id: string; name: string } | null;
+  totalSlipValue: string | number;
+  notes?: string | null;
+  items: SpareIssueSlipItem[];
+  issuedAt: string;
+}
+export interface CreateIssueSlipItemBody {
+  partName: string;
+  qtyIssued: number;
+  unitCost?: number;
+}
+export interface CreateIssueSlipBody {
+  vehicleId: string;
+  jobCardId?: string | null;
+  vendorId?: string | null;
+  garageId?: string | null;
+  notes?: string | null;
+  items: CreateIssueSlipItemBody[];
 }
 
 export interface GarageLog {
