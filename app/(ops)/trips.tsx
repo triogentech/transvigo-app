@@ -1,7 +1,8 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { fontSize, fontWeight, radius, spacing, useColors } from '@/theme';
 import { Card } from '@/components/ui/Card';
+import { Input } from '@/components/ui/Input';
 import { OpsListScaffold } from '@/components/ops/OpsListScaffold';
 import { useOpsList } from '@/hooks/useOpsList';
 import * as tripsApi from '@/api/trips.api';
@@ -16,9 +17,25 @@ const fetchTrips = async (): Promise<Trip[]> => {
 export default function OpsTrips() {
   const c = useColors();
   const { items, loading, error, reload } = useOpsList(useCallback(fetchTrips, []));
+  const [q, setQ] = useState('');
+
+  const filtered = useMemo(() => {
+    const s = q.trim().toLowerCase();
+    if (!s) return items;
+    return items.filter((t) =>
+      [t.tripNumber, t.startPoint, t.endPoint, t.vehicle?.vehicleNumber, t.driver?.fullName]
+        .filter(Boolean)
+        .some((v) => String(v).toLowerCase().includes(s)),
+    );
+  }, [items, q]);
+
   return (
     <OpsListScaffold title="Trips" loading={loading} error={error} empty={items.length === 0} onRefresh={reload}>
-      {items.map((t) => {
+      <Input value={q} onChangeText={setQ} placeholder="Search trip #, route, vehicle, driver…" />
+      {q.trim() && filtered.length === 0 ? (
+        <Text style={{ color: c.textTertiary, textAlign: 'center', marginTop: spacing.lg }}>No trips match “{q.trim()}”.</Text>
+      ) : null}
+      {filtered.map((t) => {
         const color = STATUS_COLOR[t.currentStatus] ?? '#9CA3AF';
         return (
           <Card key={t.id} style={styles.card} accentColor={color}>
