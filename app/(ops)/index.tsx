@@ -18,6 +18,7 @@ const TILES: Tile[] = [
   { label: 'Invoices', icon: 'receipt-outline', route: '/(ops)/invoices', color: '#0EA5C5' },
   { label: 'Maintenance', icon: 'build-outline', route: '/(ops)/maintenance', color: '#D97706' },
   { label: 'Trips', icon: 'map-outline', route: '/(ops)/trips', color: brand.navy },
+  { label: 'Analytics', icon: 'bar-chart-outline', route: '/(ops)/analytics', color: '#2563EB' },
 ];
 
 export default function OpsHub() {

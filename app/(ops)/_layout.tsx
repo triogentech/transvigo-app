@@ -56,6 +56,7 @@ export default function OpsTabsLayout() {
       <Tabs.Screen name="invoices" options={{ href: null }} />
       <Tabs.Screen name="maintenance" options={{ href: null }} />
       <Tabs.Screen name="trips" options={{ href: null }} />
+      <Tabs.Screen name="analytics" options={{ href: null }} />
     </Tabs>
   );
 }

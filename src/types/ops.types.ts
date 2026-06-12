@@ -157,3 +157,25 @@ export interface SelectOption {
   value: string;
   label: string;
 }
+
+// ── Ops analytics ──
+export interface VendorCredit {
+  vendorId: string | null;
+  vendorName: string;
+  spend: number;
+  creditDue: number;
+}
+export interface InvoiceAnalytics {
+  totalSpend: number;
+  totalCreditDue: number;
+  vendors: VendorCredit[];
+}
+export interface PartSpend {
+  partName: string;
+  cost: number;
+  qty: number;
+}
+export interface SpareAnalytics {
+  majorPartSpend: number;
+  parts: PartSpend[];
+}

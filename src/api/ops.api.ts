@@ -3,8 +3,8 @@ import type { Paginated } from '@/types/api.types';
 import type {
   CreateInvoiceBody, CreateIssueSlipBody, CreateJobCardBody, CreateSparePartBody, CreateTyreBody,
   CreateTyreMovementBody, GarageLog, InvoicePaymentStatus, JobCard, JobCardStatus,
-  SelectOption, SparePart, SpareIssueSlip, StockAdjustmentBody, SupplierInvoice, Tyre,
-  TyreMovementLogBody,
+  InvoiceAnalytics, SelectOption, SparePart, SpareAnalytics, SpareIssueSlip,
+  StockAdjustmentBody, SupplierInvoice, Tyre, TyreMovementLogBody,
 } from '@/types/ops.types';
 
 const list = async <T>(path: string): Promise<T[]> => {
@@ -40,6 +40,10 @@ export const adjustStock = (id: string, body: StockAdjustmentBody) =>
 export const getIssueSlips = () => list<SpareIssueSlip>('/api/spare-issue-slips');
 export const createIssueSlip = (body: CreateIssueSlipBody) =>
   api.post<SpareIssueSlip>('/api/spare-issue-slips', body).then((r) => r.data);
+
+// ── Analytics ──
+export const getInvoiceAnalytics = () => api.get<InvoiceAnalytics>('/api/invoices/analytics').then((r) => r.data);
+export const getSpareAnalytics = () => api.get<SpareAnalytics>('/api/spare-issue-slips/analytics').then((r) => r.data);
 
 // ── Tyres ──
 export const getTyres = () => list<Tyre>('/api/tyres');
