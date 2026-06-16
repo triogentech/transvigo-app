@@ -1,14 +1,14 @@
-# Privacy Policy — TransVigo Driver
+# Privacy Policy — TransVigo
 
 **Effective date:** 8 June 2026
-**App:** TransVigo Driver (`com.transvigo.driver`)
+**App:** TransVigo (`com.transvigo.driver`)
 **Provider:** TransVigo
 
 > Host this page at a public HTTPS URL (e.g. `https://transvigo.in/privacy`) and
 > paste that URL into the Play Console listing and Data Safety form. Google
 > requires the policy to be reachable without logging in.
 
-TransVigo Driver is a workforce app used by drivers and operations staff of a
+TransVigo is a workforce app used by drivers and operations staff of a
 fleet business to manage trips, log expenses, raise maintenance tickets, and
 receive work notifications. Accounts are created by the fleet operator; the app
 is not offered to the general public.

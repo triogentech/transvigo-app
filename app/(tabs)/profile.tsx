@@ -130,7 +130,7 @@ export default function ProfileScreen() {
 
       <SettingsGroup title="SUPPORT">
         <SettingsRow icon="call-outline" label="Contact Support" onPress={() => void Linking.openURL('mailto:info@transvigo.in')} />
-        <SettingsRow icon="document-text-outline" label="About TransVigo" onPress={() => Alert.alert('TransVigo Driver', `Version ${version}`)} />
+        <SettingsRow icon="document-text-outline" label="About TransVigo" onPress={() => Alert.alert('TransVigo', `Version ${version}`)} />
       </SettingsGroup>
 
       <Pressable onPress={confirmSignOut} style={styles.signOut}>

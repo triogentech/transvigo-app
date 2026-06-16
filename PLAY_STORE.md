@@ -1,4 +1,4 @@
-# Releasing TransVigo Driver to the Google Play Store (production)
+# Releasing TransVigo to the Google Play Store (production)
 
 End-to-end runbook for publishing the **production AAB** to Google Play. This is
 the store path; `DISTRIBUTION.md` covers the separate sideloaded-APK workflow.
@@ -54,7 +54,7 @@ available later via `eas build:list`).
 
 ## 4. Create the app in Play Console (first release only)
 
-1. Play Console → *Create app* → name **TransVigo Driver**, App, Free.
+1. Play Console → *Create app* → name **TransVigo**, App, Free.
 2. Fill **Store listing** from `store/STORE_LISTING.md`:
    - Short + full description, **App icon** = `store/play-icon-512.png`,
      **Feature graphic** = `store/feature-graphic-1024x500.png`, and ≥2 phone

@@ -1,4 +1,4 @@
-# Play Store listing — TransVigo Driver
+# Play Store listing — TransVigo
 
 Copy/paste content and form answers for the Google Play Console listing.
 Assets referenced here live in this `store/` folder.
@@ -9,7 +9,7 @@ Assets referenced here live in this `store/` folder.
 
 | Field | Value |
 |---|---|
-| App name | `TransVigo Driver` |
+| App name | `TransVigo` |
 | Package name | `com.transvigo.driver` |
 | Default language | English (United States) – `en-US` |
 | App or game | App |
@@ -23,13 +23,13 @@ Assets referenced here live in this `store/` folder.
 ## Short description (≤ 80 chars)
 
 ```
-Trips, expenses, and maintenance for your fleet — in one driver app.
+Trips, expenses & maintenance for drivers and ops — one fleet app.
 ```
 
 ## Full description (≤ 4000 chars)
 
 ```
-TransVigo Driver is the companion app for drivers and operations staff of a
+TransVigo is the companion app for drivers and operations staff of a
 TransVigo-managed fleet. Stay on top of your assigned work from one place.
 
 DRIVERS
@@ -49,7 +49,7 @@ OPERATIONS & MAINTENANCE
 Light and dark mode, secure sign-in with email or phone, and a fast,
 offline-tolerant interface built for life on the road.
 
-Note: TransVigo Driver is a workforce app. Your account is provided by your
+Note: TransVigo is a workforce app. Your account is provided by your
 employer; it is not intended for general public sign-up.
 ```
 
