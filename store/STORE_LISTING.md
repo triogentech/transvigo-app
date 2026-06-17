@@ -16,7 +16,7 @@ Assets referenced here live in this `store/` folder.
 | Free or paid | Free |
 | Category | Business |
 | Tags | Fleet, Logistics, Productivity |
-| Contact email | `support@transvigo.in` |
+| Contact email | `info@transvigo.in` |
 | Website | `https://transvigo.in` |
 | Privacy policy URL | `https://transvigo.in/privacy` (host `store/PRIVACY_POLICY.md`) |
 
@@ -85,7 +85,7 @@ The app collects the following. Source: declared permissions + features.
 Additional declarations:
 - **Is all data encrypted in transit?** Yes (HTTPS).
 - **Do you provide a way to request data deletion?** Yes — via the fleet operator
-  / `support@transvigo.in`.
+  / `info@transvigo.in`.
 - **Is data sold?** No.
 - **Used for advertising?** No.
 - Location is **not** collected in the background (only while in use).

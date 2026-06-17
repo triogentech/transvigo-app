@@ -59,6 +59,6 @@ Credentials are stored encrypted on the device using the platform secure store.
 
 ## Contact
 
-Questions or data requests: **support@transvigo.in**
+Questions or data requests: **info@transvigo.in**
 
 _This policy may be updated; the effective date above reflects the latest version._
