@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -17,6 +17,7 @@ import { TripExpenses } from '@/components/trip/TripExpenses';
 import * as tripsApi from '@/api/trips.api';
 import { errMessage } from '@/api/client';
 import { showToast } from '@/store/toast.store';
+import { selectMode, useUpdateStore } from '@/store/update.store';
 import { formatCurrency, formatDateTime } from '@/utils/format';
 import type { TripStatus } from '@/types/api.types';
 
@@ -31,10 +32,12 @@ export default function TripDetailScreen() {
   const [error, setError] = useState<string | null>(null);
   const [confirm, setConfirm] = useState(false);
   const [expenseOpen, setExpenseOpen] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [acting, setActing] = useState(false);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (silent = false) => {
     if (!id) return;
-    setLoading(true);
+    if (!silent) setLoading(true);
     setError(null);
     try {
       setDetail(await tripsApi.getTripDetail(id));
@@ -49,20 +52,29 @@ export default function TripDetailScreen() {
     void load();
   }, [load]);
 
+  const updateMode = useUpdateStore((u) => selectMode(u));
   const trip = detail?.trip;
   const nextStatus: TripStatus | null =
     trip?.currentStatus === 'created' ? 'in_transit' : trip?.currentStatus === 'in_transit' ? 'completed' : null;
 
+  // Outdated app / maintenance: starting a NEW trip is blocked (server enforces too);
+  // completing an in-progress trip is always allowed.
+  const startBlocked = nextStatus === 'in_transit' && (updateMode === 'mandatory' || updateMode === 'maintenance');
+
   const doTransition = async (): Promise<void> => {
-    if (!trip || !nextStatus) return;
+    if (!trip || !nextStatus || acting) return;
+    setActing(true);
     try {
       await tripsApi.updateTripStatus(trip.id, nextStatus);
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       showToast({ type: 'success', message: nextStatus === 'in_transit' ? 'Trip started' : 'Trip completed' });
+      void useUpdateStore.getState().refreshActiveTrip(); // lets a pending mandatory update take over
       await load();
     } catch (e) {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       showToast({ type: 'error', message: errMessage(e, 'Could not update trip') });
+    } finally {
+      setActing(false);
     }
   };
 
@@ -77,10 +89,22 @@ export default function TripDetailScreen() {
         </View>
       ) : error || !trip ? (
         <View style={styles.content}>
-          <ErrorBanner message={error ?? 'Trip not found'} onRetry={load} />
+          <ErrorBanner message={error ?? 'Trip not found'} onRetry={() => void load()} />
         </View>
       ) : (
-        <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + spacing.xxl }]}>
+        <ScrollView
+          contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + spacing.xxl }]}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={async () => {
+                setRefreshing(true);
+                await load(true);
+                setRefreshing(false);
+              }}
+            />
+          }
+        >
           <Card>
             <View style={styles.routeRow}>
               <Ionicons name="ellipse" size={12} color={brand.teal} />
@@ -109,10 +133,20 @@ export default function TripDetailScreen() {
               fullWidth
               variant={nextStatus === 'in_transit' ? 'primary' : 'primary'}
               leftIcon={nextStatus === 'in_transit' ? 'play' : 'checkmark-circle'}
+              loading={acting}
+              disabled={startBlocked}
               onPress={() => setConfirm(true)}
             >
               {nextStatus === 'in_transit' ? 'Start Trip' : 'Complete Trip'}
             </Button>
+          ) : null}
+
+          {startBlocked ? (
+            <Text style={{ color: c.textSecondary, fontSize: fontSize.sm }}>
+              {updateMode === 'maintenance'
+                ? 'New trips can’t be started during maintenance.'
+                : 'Update TransVigo to start new trips.'}
+            </Text>
           ) : null}
 
           <Card style={styles.detailsCard}>
@@ -137,6 +171,20 @@ export default function TripDetailScreen() {
               </View>
             ) : null}
           </Card>
+
+          <Button
+            variant="secondary"
+            leftIcon="navigate"
+            fullWidth
+            onPress={() => {
+              const dest = encodeURIComponent(trip.currentStatus === 'created' ? trip.startPoint : trip.endPoint);
+              void Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${dest}`).catch(() =>
+                showToast({ type: 'error', message: 'Could not open maps' }),
+              );
+            }}
+          >
+            {trip.currentStatus === 'created' ? 'Navigate to Pickup' : 'Navigate to Drop'}
+          </Button>
 
           <View style={styles.quickRow}>
             <Button

@@ -1,6 +1,7 @@
 import axios, { type AxiosInstance, type InternalAxiosRequestConfig } from 'axios';
 import Constants from 'expo-constants';
 import type { TokenPair } from '@/types/api.types';
+import { APP_VERSION_CODE } from '@/utils/app-version';
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3007';
 const APP_VERSION = Constants.expoConfig?.version ?? '1.0.0';
@@ -38,6 +39,14 @@ export function registerAuthHandlers(h: AuthHandlers): void {
   handlers = h;
 }
 
+/** Fired when the backend rejects with 426 APP_UPDATE_REQUIRED or 503 MAINTENANCE. */
+let policyBlockedHandler: ((info: { status: number; data?: Record<string, unknown> }) => void) | null = null;
+export function registerPolicyBlockedHandler(
+  fn: (info: { status: number; data?: Record<string, unknown> }) => void,
+): void {
+  policyBlockedHandler = fn;
+}
+
 export const api: AxiosInstance = axios.create({
   baseURL: BASE_URL,
   timeout: 20_000,
@@ -49,11 +58,13 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   if (auth.orgSlug) config.headers.set('X-Org-Slug', auth.orgSlug);
   config.headers.set('X-Client', 'driver-app');
   config.headers.set('X-App-Version', APP_VERSION);
+  if (APP_VERSION_CODE !== null) config.headers.set('X-App-Version-Code', String(APP_VERSION_CODE));
   return config;
 });
 
 // ── Single-flight token refresh ──
 let refreshPromise: Promise<boolean> | null = null;
+let refreshRejected = false;
 
 async function rawRefresh(refreshToken: string): Promise<TokenPair> {
   // Bare axios (not `api`) so the refresh call itself isn't intercepted.
@@ -72,7 +83,13 @@ function doRefresh(): Promise<boolean> {
         handlers?.onTokensRefreshed(pair);
         return true;
       })
-      .catch(() => false)
+      .catch((err) => {
+        // Only a definitive rejection (401/400/403) means the session is dead.
+        // Network errors/timeouts/5xx must NOT log the driver out.
+        const st = axios.isAxiosError(err) ? err.response?.status : undefined;
+        refreshRejected = st === 400 || st === 401 || st === 403;
+        return false;
+      })
       .finally(() => {
         refreshPromise = null;
       });
@@ -87,6 +104,11 @@ api.interceptors.response.use(
     const status = error.response?.status;
     const url = original?.url ?? '';
 
+    const code = (error.response?.data as { code?: string } | undefined)?.code;
+    if ((status === 426 && code === 'APP_UPDATE_REQUIRED') || (status === 503 && code === 'MAINTENANCE')) {
+      policyBlockedHandler?.({ status: status as number, data: error.response?.data as Record<string, unknown> });
+    }
+
     // Transparent refresh on 401 (never for the auth endpoints themselves).
     if (status === 401 && original && !original._retry && !url.includes('/auth/')) {
       original._retry = true;
@@ -95,7 +117,7 @@ api.interceptors.response.use(
         original.headers.set('Authorization', `Bearer ${auth.accessToken}`);
         return api(original);
       }
-      handlers?.onAuthFailure();
+      if (refreshRejected) handlers?.onAuthFailure();
     }
     return Promise.reject(error);
   },
@@ -104,7 +126,9 @@ api.interceptors.response.use(
 /** Normalises a backend/axios error into a user-facing message. */
 export function errMessage(err: unknown, fallback = 'Request failed'): string {
   if (axios.isAxiosError(err)) {
-    const data = err.response?.data as { error?: string; message?: string } | undefined;
+    const data = err.response?.data as { error?: string; message?: string; code?: string } | undefined;
+    // Coded errors (e.g. APP_UPDATE_REQUIRED, MAINTENANCE) carry a driver-readable `message`; `error` is the machine code.
+    if (data?.code && data.message) return data.message;
     return data?.error ?? data?.message ?? err.message ?? fallback;
   }
   return fallback;

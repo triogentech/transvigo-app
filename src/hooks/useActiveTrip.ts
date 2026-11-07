@@ -4,6 +4,7 @@ import * as Haptics from 'expo-haptics';
 import * as tripsApi from '@/api/trips.api';
 import { errMessage } from '@/api/client';
 import { useTripStore } from '@/store/trip.store';
+import { useUpdateStore } from '@/store/update.store';
 import { showToast } from '@/store/toast.store';
 import { cacheGetStale, cacheSet, CACHE_TTL } from '@/utils/cache';
 import type { Trip, TripStatus } from '@/types/api.types';
@@ -76,6 +77,7 @@ export function useActiveTrip() {
       try {
         const updated = await tripsApi.updateTripStatus(current.id, status);
         await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        void useUpdateStore.getState().refreshActiveTrip();
         if (status === 'completed') {
           setActiveTrip(null);
           cacheSet(CACHE_KEY, null, CACHE_TTL.detail);

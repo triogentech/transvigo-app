@@ -8,7 +8,7 @@ import { createKV } from './kv';
  */
 const storage = createKV('transvigo-queue');
 const QUEUE_KEY = 'offline_queue';
-const MAX_RETRIES = 3;
+const MAX_RETRIES = 6;
 
 export interface QueuedAction {
   id: string;

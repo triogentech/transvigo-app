@@ -3,7 +3,7 @@
     "name": "TransVigo",
     "slug": "transvigo-driver",
     "scheme": "transvigo-driver",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -32,8 +32,7 @@
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.RECEIVE_BOOT_COMPLETED",
         "android.permission.VIBRATE",
-        "android.permission.POST_NOTIFICATIONS",
-        "android.permission.RECORD_AUDIO"
+        "android.permission.POST_NOTIFICATIONS"
       ]
     },
     "web": {
@@ -47,13 +46,15 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "TransVigo needs camera access for odometer and receipt photos"
+          "cameraPermission": "TransVigo needs camera access for odometer and receipt photos",
+          "recordAudioAndroid": false
         }
       ],
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "TransVigo uses your location to auto-fill incident reports"
+          "locationAlwaysAndWhenInUsePermission": "TransVigo uses your location to auto-fill incident reports",
+          "locationWhenInUsePermission": "TransVigo uses your location to auto-fill incident reports"
         }
       ],
       [

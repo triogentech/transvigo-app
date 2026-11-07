@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { create } from 'zustand';
 import * as authApi from '@/api/auth.api';
 import { clearClientAuth, registerAuthHandlers, setClientAuth } from '@/api/client';
@@ -123,10 +124,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ user, accessToken: access, refreshToken: refresh, orgSlug });
 
     if (isExpired(access)) {
-      const ok = await get().refreshTokens();
-      if (!ok) {
-        await get().logout();
-        return;
+      try {
+        await persistPair(await authApi.refresh(refresh));
+      } catch (err) {
+        // Log out only when the server rejects the refresh token. Offline /
+        // timeout: stay signed in with cached data; the 401 interceptor retries later.
+        const st = axios.isAxiosError(err) ? err.response?.status : undefined;
+        if (st === 400 || st === 401 || st === 403) {
+          await get().logout();
+          return;
+        }
       }
     }
     set({ isAuthenticated: true, isLoading: false });

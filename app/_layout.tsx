@@ -7,7 +7,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/store/auth.store';
 import { initOfflineListener } from '@/store/offline.store';
 import { useNotifications } from '@/hooks/useNotifications';
-import { useInAppUpdate } from '@/hooks/useInAppUpdate';
+import { useUpdateChecks } from '@/hooks/useUpdateChecks';
+import { UpdateBanner, UpdateGate } from '@/components/update/UpdateGate';
 import { OfflineBanner } from '@/components/ui/OfflineBanner';
 import { Toaster } from '@/components/ui/Toaster';
 import { LoadingOverlay } from '@/components/ui/LoadingOverlay';
@@ -52,13 +53,15 @@ function AppShell() {
   const isLoading = useAuthStore((s) => s.isLoading);
   useAuthGate();
   useNotifications();
-  useInAppUpdate();
+  useUpdateChecks();
 
   return (
     <View style={{ flex: 1, backgroundColor: c.bgPage }}>
       <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
       <OfflineBanner />
+      <UpdateBanner />
       <Stack screenOptions={{ headerShown: false }} />
+      <UpdateGate />
       <Toaster />
       <LoadingOverlay visible={isLoading} />
     </View>

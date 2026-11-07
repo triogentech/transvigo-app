@@ -25,7 +25,8 @@ async function executeAction(action: QueuedAction): Promise<ExecResult> {
   } catch (err) {
     if (axios.isAxiosError(err) && err.response) {
       const s = err.response.status;
-      if (s >= 400 && s < 500) return 'client_error'; // user error — don't retry
+      // 401 (token not refreshable yet), 408, 429 are transient — keep the action.
+      if (s >= 400 && s < 500 && s !== 401 && s !== 408 && s !== 429) return 'client_error';
     }
     return 'retryable';
   }

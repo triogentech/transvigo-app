@@ -39,8 +39,11 @@ export async function getTripDetail(id: string): Promise<TripDetail> {
   return { trip, transactions, fuelLogs };
 }
 
-/** Driver actions: created → in_transit (start), in_transit → completed. */
+/** Driver actions: created → in_transit (start), in_transit → completed.
+ *  Uses the driver-scoped endpoint (ownership + forward-only checked server-side;
+ *  repeating the same transition is a safe no-op). Wire values are hyphenated. */
 export async function updateTripStatus(id: string, status: TripStatus): Promise<Trip> {
-  const res = await api.put<Trip>(`/api/trips/${id}/status`, { status });
+  const wire = status === 'in_transit' ? 'in-transit' : status;
+  const res = await api.patch<Trip>(`/api/driver/trips/${id}/status`, { status: wire });
   return res.data;
 }
