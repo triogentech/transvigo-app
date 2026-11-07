@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { brand, fontSize, fontWeight, radius, spacing, useColors } from '@/theme';
+import { brand, fontSize, fontWeight, radius, spacing, useColors, useResolvedScheme } from '@/theme';
 
 type Variant = 'primary' | 'secondary' | 'danger' | 'ghost';
 type Size = 'sm' | 'md' | 'lg';
@@ -34,6 +34,8 @@ export function Button({
   style,
 }: ButtonProps) {
   const c = useColors();
+  // Navy on the dark surface is ~1.3:1 contrast; use the brand teal accent in dark mode.
+  const accent = useResolvedScheme() === 'dark' ? brand.teal : brand.navy;
   const isDisabled = disabled || loading;
 
   const bg: Record<Variant, string> = {
@@ -44,13 +46,13 @@ export function Button({
   };
   const fg: Record<Variant, string> = {
     primary: '#FFFFFF',
-    secondary: brand.navy,
+    secondary: accent,
     danger: '#FFFFFF',
-    ghost: brand.navy,
+    ghost: accent,
   };
   const borderColor: Record<Variant, string> = {
     primary: brand.navy,
-    secondary: brand.navy,
+    secondary: accent,
     danger: c.danger,
     ghost: 'transparent',
   };

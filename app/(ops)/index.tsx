@@ -29,10 +29,14 @@ export default function OpsHub() {
   const [openTickets, setOpenTickets] = useState<number | null>(null);
   const [onCredit, setOnCredit] = useState<number | null>(null);
 
+  // This screen can mount briefly for a Driver before the auth gate redirects to their tabs;
+  // only fetch ops data for ops roles (Drivers get a 403 on /api/invoices).
+  const isOps = !!user && user.role !== 'Driver';
   useEffect(() => {
+    if (!isOps) return;
     ticketsApi.getTicketsPage({ status: 'open', pageSize: 1 }).then((r) => setOpenTickets(r.pagination.total)).catch(() => undefined);
     ops.getInvoices().then((rows) => setOnCredit(rows.filter((i) => i.paymentStatus === 'on_credit').length)).catch(() => undefined);
-  }, []);
+  }, [isOps]);
 
   return (
     <ScrollView

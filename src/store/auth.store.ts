@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { create } from 'zustand';
 import * as authApi from '@/api/auth.api';
-import { clearClientAuth, registerAuthHandlers, setClientAuth } from '@/api/client';
+import { clearClientAuth, markAuthReady, registerAuthHandlers, setClientAuth } from '@/api/client';
 import * as tokenStorage from '@/utils/token-storage';
 import { isExpired } from '@/utils/jwt';
 import type { AuthUser, ChangePasswordBody, LoginRequest, TokenPair } from '@/types/api.types';
@@ -18,6 +18,7 @@ interface AuthState {
   logout: () => Promise<void>;
   refreshTokens: () => Promise<boolean>;
   initAuth: () => Promise<void>;
+  runInitAuth: () => Promise<void>;
   changePassword: (body: ChangePasswordBody) => Promise<void>;
 }
 
@@ -96,6 +97,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   initAuth: async () => {
+    try {
+      await get().runInitAuth();
+    } finally {
+      markAuthReady();
+    }
+  },
+
+  runInitAuth: async () => {
     if (!handlersRegistered) {
       registerAuthHandlers({
         onTokensRefreshed: (pair) => {

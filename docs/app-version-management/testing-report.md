@@ -9,7 +9,7 @@
 |---|---|---|---|---|
 | Backend unit (policy matrix, validation) | 13 | 13 | 0 | `tests/app-config.test.ts` |
 | Backend HTTP against real Postgres | 30 | 30 | 0 | `vm-e2e.mjs`: public API, auth/RBAC, validation, enforcement, audit |
-| Driver app in browser (UI → API → DB) | 17 | 17 | 0 | `web-e2e.mjs` — final run on the rebuilt bundle after all fixes: 17/17 |
+| Driver app in browser (UI → API → DB) | 20 | 20 | 0 | `web-e2e.mjs` — final run on the rebuilt bundle after all fixes: 20/20 (adds W-06 logged-out startup, W-07 signed-in startup, W-08 button colour) |
 | Type-check: backend, driver app | 2 | 2 | 0 | dashboard: 4 pre-existing errors, none in new files |
 | Dashboard page | 0 | – | – | builds only; **page not exercised in a browser (NOT TESTED)** |
 
@@ -43,9 +43,7 @@ W-01 no policy → no gate · W-02 version API unreachable → app loads (fails 
 | P1 | Production needs migrations 017 + 018 deployed **before** app 1.1.0 ships (app calls new endpoints). |
 | P2 | Server-side gate trusts client headers (`X-Client`, `X-App-Version-Code`); a custom client can bypass it. Needs Play Integrity to close. |
 | P2 | Flexible updates auto-restart the app when the download completes (library calls `completeUpdate()` itself); no progress UI. Mitigated by showing the optional prompt only when no trip is active. |
-| P2 | `POST /platform/organisations` returns 500 and **loses the temp password** if the welcome email fails after the org is committed. |
-| P3 | Cold start while logged out fires pointless `/api/tickets` and `/api/invoices` requests (401). |
-| P3 | Secondary buttons (incl. new "Navigate") are very dim in dark mode. |
+| P3 | `drivers` has `UNIQUE(org_id, ifsc_code)`: two drivers of the same bank branch cannot be created (schema decision, not changed). |
 | P3 | Version policy response is browser/CDN cacheable for 60 s (+30 s server cache): policy changes take ~1.5 min to reach clients. |
 | P3 | Web preview only: `expo-notifications` throws on web; bundle needs `type=module` (import.meta). Native unaffected. |
 
@@ -54,3 +52,14 @@ Server logic and the driver UI states are verified end-to-end against a real dat
 
 
 **Final run (after all fixes):** 17/17 browser tests pass; screenshots confirm the readable error toast and the visible dark-mode icon. One earlier run failed only because my harness exhausted the platform-login rate limiter (restart cleared it); that is a test-setup artifact, not an app result.
+
+## Follow-up small fixes (all verified)
+| Fix | Verification |
+|---|---|
+| Org creation no longer 500s / loses the temp password when the welcome email fails (`emailSent:false` + dashboard warning) | SF-07..09 real HTTP with SMTP down: 201, password returned, admin can log in, org committed |
+| Trip assignment push (`TRIP_ASSIGNED`) on create and on driver change only | SF-02..06 real HTTP with outbound pushes recorded (not sent to Expo) + 3 unit tests |
+| App waits for auth to load before sending requests and fails locally when signed out; Ops Hub no longer fetches for Drivers | W-06 (0 requests logged out), W-07 (no 401/403 on signed-in start) — this also removed a real cold-start race where a signed-in driver's first fetches went out without a token |
+| Secondary/ghost buttons use the teal accent in dark mode | W-08 computed colour + screenshot |
+| Stale RBAC unit test updated (Drivers have read-only vehicles by design) | backend suite 27/27 |
+
+Still NOT tested: native Android behaviour of the auth-ready change (verified on web only); real Expo push delivery to a device.

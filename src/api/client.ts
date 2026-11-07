@@ -47,13 +47,32 @@ export function registerPolicyBlockedHandler(
   policyBlockedHandler = fn;
 }
 
+/**
+ * Resolves once the launch-time token load (initAuth) has finished. Requests made
+ * before that — screens mount and fetch while the splash overlay is up — wait for it
+ * instead of going out without a token (a guaranteed 401 for a signed-in driver).
+ * Capped so a stuck SecureStore can never hang every request.
+ */
+let markAuthReady: () => void = () => undefined;
+const authReady = new Promise<void>((resolve) => {
+  markAuthReady = resolve;
+});
+export { markAuthReady };
+const AUTH_READY_TIMEOUT_MS = 5000;
+
 export const api: AxiosInstance = axios.create({
   baseURL: BASE_URL,
   timeout: 20_000,
   headers: { 'Content-Type': 'application/json' },
 });
 
-api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+api.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
+  const isAuthCall = (config.url ?? '').includes('/auth/');
+  if (!isAuthCall) {
+    await Promise.race([authReady, new Promise<void>((r) => setTimeout(r, AUTH_READY_TIMEOUT_MS))]);
+    // Signed out: don't hit the network with a request that can only 401.
+    if (!auth.accessToken) throw new axios.CanceledError('Not signed in');
+  }
   if (auth.accessToken) config.headers.set('Authorization', `Bearer ${auth.accessToken}`);
   if (auth.orgSlug) config.headers.set('X-Org-Slug', auth.orgSlug);
   config.headers.set('X-Client', 'driver-app');
@@ -136,5 +155,5 @@ export function errMessage(err: unknown, fallback = 'Request failed'): string {
 
 /** True when the failure is a network/timeout error (no HTTP response). */
 export function isNetworkError(err: unknown): boolean {
-  return axios.isAxiosError(err) && !err.response;
+  return axios.isAxiosError(err) && !axios.isCancel(err) && !err.response;
 }
