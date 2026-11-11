@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
-import { View } from 'react-native';
+import { Platform, View, useWindowDimensions } from 'react-native';
+import * as ScreenOrientation from 'expo-screen-orientation';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -47,8 +48,26 @@ function useAuthGate(): void {
   }, [isAuthenticated, isLoading, role, segments, router]);
 }
 
+/**
+ * Phones stay portrait (as before); large screens (sw >= 600dp: tablets, foldables) rotate freely.
+ * The manifest no longer pins an orientation — Android 16 ignores such locks on large screens
+ * and Play flags them — so the phone lock is applied at runtime instead.
+ */
+function usePhonePortraitLock(): void {
+  const { width, height } = useWindowDimensions();
+  const isPhone = Math.min(width, height) < 600;
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    const op = isPhone
+      ? ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP)
+      : ScreenOrientation.unlockAsync();
+    op.catch(() => undefined);
+  }, [isPhone]);
+}
+
 function AppShell() {
   const c = useColors();
+  usePhonePortraitLock();
   const scheme = useResolvedScheme();
   const isLoading = useAuthStore((s) => s.isLoading);
   useAuthGate();

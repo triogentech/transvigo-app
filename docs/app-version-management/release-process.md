@@ -10,3 +10,11 @@
 8. Ordering for backend-dependent releases: deploy backend first, publish app, then raise the minimum.
 Rollback: lower/disable enforcement or turn off maintenance in the dashboard — takes effect within ~1 minute (cache).
 CI: `.github/workflows/release-check.yml` runs typecheck + version-consistency check.
+
+## Play Console "recommended actions" (addressed on branch `fix/play-console-recommendations`)
+| Play warning | Change | Verified? |
+|---|---|---|
+| DEX code optimization below threshold (obfuscation 1%) | R8 minify + resource shrinking enabled for release (`android/gradle.properties`), extra keep rules in `proguard-rules.pro` | **No** — not built locally (disk). Test the EAS build on a device before rollout; R8 can break reflection-based libs at runtime only |
+| Orientation / resizability restrictions | `app.json` orientation `default`, `screenOrientation` removed from MainActivity; phones (<600dp) locked to portrait at runtime via `expo-screen-orientation`; unused `expo-camera` (source of the ML Kit scanner activity) removed, `expo-image-picker` plugin added for camera text | config validated only; **phone portrait lock + tablet rotation untested on device** |
+| Deprecated edge-to-edge APIs | removed the obsolete `android:statusBarColor` theme item. The remaining flagged calls are inside React Native, react-native-screens, Material Components and expo-image-picker, not app code | They will persist until the Expo SDK is upgraded (SDK 55+) |
+After the build: check the merged manifest has no `screenOrientation` and that Play's pre-launch report/Android vitals show no new crashes (and a mapping file is attached to the release).
