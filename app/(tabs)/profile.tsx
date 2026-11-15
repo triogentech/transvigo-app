@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { brand, fontFamily, fontSize, fontWeight, radius, spacing, status as st, useColors } from '@/theme';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
+import { confirmAction } from '@/utils/confirm';
 import { useAuthStore } from '@/store/auth.store';
 import { useThemeStore, type ThemeMode } from '@/store/theme.store';
 import * as driverApi from '@/api/driver.api';
@@ -48,10 +49,7 @@ export default function ProfileScreen() {
   const version = Constants.expoConfig?.version ?? '1.0.0';
 
   const confirmSignOut = (): void => {
-    Alert.alert('Sign out', 'Are you sure you want to sign out?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Sign Out', style: 'destructive', onPress: () => void logout() },
-    ]);
+    confirmAction('Sign out', 'Are you sure you want to sign out?', 'Sign Out', () => void logout());
   };
 
   return (

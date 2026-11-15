@@ -1,4 +1,4 @@
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { brand, fontSize, fontWeight, spacing, status as st, useColors } from '@/theme';
 import { Card } from '@/components/ui/Card';
 import { AppearanceSelector } from '@/components/AppearanceSelector';
+import { confirmAction } from '@/utils/confirm';
 import { useAuthStore } from '@/store/auth.store';
 import { initialsOf } from '@/utils/format';
 
@@ -18,10 +19,7 @@ export default function OpsProfile() {
   const version = Constants.expoConfig?.version ?? '1.0.0';
 
   const confirmSignOut = () => {
-    Alert.alert('Sign out', 'Are you sure you want to sign out?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Sign Out', style: 'destructive', onPress: () => void logout() },
-    ]);
+    confirmAction('Sign out', 'Are you sure you want to sign out?', 'Sign Out', () => void logout());
   };
 
   return (
