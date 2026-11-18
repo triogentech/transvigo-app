@@ -57,6 +57,8 @@ export default function LogFuelScreen() {
         ]);
         setStations(st.map((o) => ({ value: o.value, label: o.label })));
         setTrips(tr.map((o) => ({ value: o.value, label: o.label })));
+        // Drivers only get their current trip back: attach to it by default.
+        if (!tripId && tr.length === 1) setSelectedTrip(tr[0]!.value);
       } catch {
         /* selects best-effort */
       }

@@ -10,6 +10,7 @@ import { useOpsList } from '@/hooks/useOpsList';
 import { showToast } from '@/store/toast.store';
 import { errMessage } from '@/api/client';
 import * as ops from '@/api/ops.api';
+import { formatDateTime } from '@/utils/format';
 import type { JobCardStatus, SelectOption } from '@/types/ops.types';
 
 const STATUS: Record<JobCardStatus, { label: string; color: string }> = {
@@ -83,7 +84,11 @@ export default function OpsJobCards() {
             </View>
           </View>
           <Text style={[styles.meta, { color: c.textSecondary }]}>{jc.vehicle?.vehicleNumber ?? '—'} · ₹{Number(jc.totalJobCost).toLocaleString('en-IN')}</Text>
-          <Text style={[styles.complaint, { color: c.textPrimary }]} numberOfLines={2}>{jc.driverComplaint}</Text>
+          <Text style={[styles.meta, { color: c.textSecondary }]}>
+            Created {formatDateTime(jc.entryTime)} · Odometer {Number(jc.entryOdometer).toLocaleString('en-IN')} km
+          </Text>
+          <Text style={[styles.meta, { color: c.textTertiary }]}>Reported issue</Text>
+          <Text style={[styles.complaint, { color: c.textPrimary }]}>{jc.driverComplaint}</Text>
           <Select value={jc.status} onChange={(v) => changeStatus(jc.id, v as JobCardStatus)} options={STATUS_OPTS} label="Set status" />
           <Select value={jc.supervisor?.id ?? null} onChange={(v) => assign(jc.id, v)} options={assignees} label="Assign to" placeholder="Unassigned" searchable />
         </Card>

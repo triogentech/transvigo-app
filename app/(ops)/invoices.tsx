@@ -1,3 +1,4 @@
+import { ZoomableImage } from '@/components/ui/ZoomableImage';
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -100,7 +101,7 @@ export default function OpsInvoices() {
             {i.invoiceNumber} · {i.vehicle?.vehicleNumber ?? '—'}
             {i.jobCard ? ` · ${i.jobCard.jobCardNumber}` : ''} · ₹{num(i.totalAmount).toLocaleString('en-IN')}
           </Text>
-          {i.photoUrl ? <Image source={{ uri: i.photoUrl }} style={styles.thumb} resizeMode="cover" /> : null}
+          {i.photoUrl ? <ZoomableImage uri={i.photoUrl} style={styles.thumb} /> : null}
           <Select value={i.paymentStatus} onChange={(v) => setStatus(i.id, v as InvoicePaymentStatus)} options={STATUS_OPTS} label="Set status" />
         </Card>
       ))}

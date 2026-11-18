@@ -112,8 +112,9 @@ export interface Trip {
   startPoint: string;
   endPoint: string;
   currentStatus: TripStatus;
-  freightTotalAmount: number;
-  advanceAmount: number;
+  /** Not sent to drivers; only present for back-office roles. */
+  freightTotalAmount?: number;
+  advanceAmount?: number;
   estimatedStartTime: string;
   estimatedEndTime: string;
   actualEndTime: string | null;
@@ -221,7 +222,10 @@ export interface DriverMe {
   user: AuthUser;
   driver: DriverProfile | null;
   currentVehicle: VehicleRef | null;
+  /** In transit, else the next assigned trip still to start. */
+  currentTrip?: Trip | null;
   activeTrip: Trip | null;
+  completedTripCount?: number;
 }
 
 export interface DriverHome {

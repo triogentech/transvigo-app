@@ -2,7 +2,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { brand, fontFamily, fontSize, fontWeight, spacing, status, useColors } from '@/theme';
 import { Card } from '@/components/ui/Card';
 import { StatusBadge } from '@/components/ui/StatusBadge';
-import { formatCurrency, formatRelativeTime, getTripRoute } from '@/utils/format';
+import { formatRelativeTime, getTripRoute } from '@/utils/format';
 import type { Trip } from '@/types/api.types';
 
 const ACCENT: Record<Trip['currentStatus'], string> = {
@@ -39,7 +39,6 @@ export function TripCard({ trip, onPress }: { trip: Trip; onPress: () => void })
 
       <View style={styles.row}>
         <Text style={[styles.date, { color: c.textTertiary }]}>{formatRelativeTime(trip.createdAt)}</Text>
-        <Text style={[styles.amount, { color: c.textPrimary }]}>{formatCurrency(trip.freightTotalAmount)}</Text>
       </View>
     </Card>
   );

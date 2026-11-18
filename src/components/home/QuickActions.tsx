@@ -6,8 +6,6 @@ import { fontSize, fontWeight, radius, spacing, status as st, useColors } from '
 interface QuickActionsProps {
   onReportIssue: () => void;
   onLogFuel: () => void;
-  onLogToll: () => void;
-  onMyTrips: () => void;
   hasCriticalTicket?: boolean;
 }
 
@@ -26,8 +24,6 @@ interface Tile {
 export function QuickActions({
   onReportIssue,
   onLogFuel,
-  onLogToll,
-  onMyTrips,
   hasCriticalTicket,
 }: QuickActionsProps) {
   const c = useColors();
@@ -35,8 +31,6 @@ export function QuickActions({
   const tiles: Tile[] = [
     { key: 'issue', label: 'Report Issue', lib: 'ion', icon: 'warning-outline', color: '#EA580C', tint: '#FEF1E6', onPress: onReportIssue, danger: hasCriticalTicket },
     { key: 'fuel', label: 'Log Fuel', lib: 'mci', icon: 'gas-station', color: '#2563EB', tint: '#EAF1FE', onPress: onLogFuel },
-    { key: 'toll', label: 'Log Toll', lib: 'mci', icon: 'boom-gate', color: '#16A34A', tint: '#E9F8EF', onPress: onLogToll },
-    { key: 'trips', label: 'My Trips', lib: 'mci', icon: 'history', color: '#7C3AED', tint: '#F1ECFE', onPress: onMyTrips },
   ];
 
   const handle = (fn: () => void) => () => {

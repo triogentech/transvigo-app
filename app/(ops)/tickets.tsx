@@ -1,5 +1,6 @@
+import { ZoomableImage } from '@/components/ui/ZoomableImage';
 import { useCallback, useEffect, useState } from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { fontSize, fontWeight, radius, spacing, useColors } from '@/theme';
 import { Card } from '@/components/ui/Card';
 import { Select } from '@/components/ui/Select';
@@ -65,7 +66,7 @@ export default function OpsTickets() {
           <Text style={[styles.meta, { color: c.textSecondary }]}>
             {t.vehicle?.vehicleNumber ?? '—'} · <Text style={{ color: PRIORITY_COLOR[t.priority], fontWeight: fontWeight.semibold }}>{t.priority.toUpperCase()}</Text>
           </Text>
-          {t.photoUrl ? <Image source={{ uri: t.photoUrl }} style={styles.photo} resizeMode="cover" /> : null}
+          {t.photoUrl ? <ZoomableImage uri={t.photoUrl} style={styles.photo} /> : null}
           <Select value={t.status} onChange={(v) => changeStatus(t.id, v as TicketStatus)} options={STATUS_OPTS} label="Set status" />
           <Select value={t.assignedToUser?.id ?? null} onChange={(v) => assign(t.id, v)} options={assignees} label="Assign to" placeholder="Unassigned" searchable />
         </Card>

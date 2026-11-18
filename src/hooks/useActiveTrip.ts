@@ -11,7 +11,7 @@ import type { Trip, TripStatus } from '@/types/api.types';
 
 const CACHE_KEY = 'active_trip';
 
-/** The driver's current in_transit trip. Cached for instant display, polled
+/** The driver's current trip (in transit, else the next one to start). Cached for instant display, polled
  *  every 60s while the app is foregrounded. */
 export function useActiveTrip() {
   const activeTrip = useTripStore((s) => s.activeTrip);
@@ -21,8 +21,9 @@ export function useActiveTrip() {
 
   const refresh = useCallback(async () => {
     try {
-      const page = await tripsApi.getTripsPage({ status: 'in_transit', pageSize: 1 });
-      const trip = page.trips[0] ?? null;
+      // Server returns only the driver's current trip; ignore a completed one from an older backend.
+      const page = await tripsApi.getTripsPage({ pageSize: 5 });
+      const trip = page.trips.find((t) => t.currentStatus !== 'completed') ?? null;
       setActiveTrip(trip);
       cacheSet(CACHE_KEY, trip, CACHE_TTL.detail);
       setError(null);

@@ -18,7 +18,7 @@ import * as tripsApi from '@/api/trips.api';
 import { errMessage } from '@/api/client';
 import { showToast } from '@/store/toast.store';
 import { selectMode, useUpdateStore } from '@/store/update.store';
-import { formatCurrency, formatDateTime } from '@/utils/format';
+import { formatDateTime } from '@/utils/format';
 import type { TripStatus } from '@/types/api.types';
 
 export default function TripDetailScreen() {
@@ -69,7 +69,9 @@ export default function TripDetailScreen() {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       showToast({ type: 'success', message: nextStatus === 'in_transit' ? 'Trip started' : 'Trip completed' });
       void useUpdateStore.getState().refreshActiveTrip(); // lets a pending mandatory update take over
-      await load();
+      // Drivers can't open past trips: after completing, go back to Home (next trip / waiting state).
+      if (nextStatus === 'completed') router.replace('/(tabs)');
+      else await load();
     } catch (e) {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       showToast({ type: 'error', message: errMessage(e, 'Could not update trip') });
@@ -151,8 +153,6 @@ export default function TripDetailScreen() {
 
           <Card style={styles.detailsCard}>
             <DetailRow label="Load Provider" value={trip.loadProvider?.name ?? '—'} />
-            <DetailRow label="Freight Amount" value={formatCurrency(trip.freightTotalAmount)} mono />
-            <DetailRow label="Advance" value={formatCurrency(trip.advanceAmount)} mono />
             <DetailRow label="Estimated Start" value={formatDateTime(trip.estimatedStartTime)} />
             <DetailRow label="Estimated End" value={formatDateTime(trip.estimatedEndTime)} />
             {trip.actualEndTime ? <DetailRow label="Actual End" value={formatDateTime(trip.actualEndTime)} /> : null}
@@ -194,14 +194,6 @@ export default function TripDetailScreen() {
               style={{ flex: 1 }}
             >
               Log Fuel
-            </Button>
-            <Button
-              variant="secondary"
-              leftIcon="card"
-              onPress={() => router.push({ pathname: '/toll/log', params: { tripId: trip.id } })}
-              style={{ flex: 1 }}
-            >
-              Log Toll
             </Button>
           </View>
         </ScrollView>

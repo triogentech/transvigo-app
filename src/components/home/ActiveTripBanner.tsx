@@ -12,14 +12,16 @@ interface ActiveTripBannerProps {
   onPress: () => void;
 }
 
+/** The driver's current trip: in transit (Complete) or assigned and waiting to start (Open to start). */
 export function ActiveTripBanner({ trip, onComplete, onPress }: ActiveTripBannerProps) {
   const c = useColors();
+  const inTransit = trip.currentStatus === 'in_transit';
   return (
     <View style={[styles.card, { backgroundColor: c.bgCard, borderColor: c.border }]}>
       <Pressable onPress={onPress}>
         <View style={styles.headerRow}>
           <Text style={[styles.number, { color: brand.teal }]}>{trip.tripNumber}</Text>
-          <StatusBadge status="in_transit" variant="trip" />
+          <StatusBadge status={trip.currentStatus} variant="trip" />
         </View>
 
         <View style={styles.routeBlock}>
@@ -39,13 +41,21 @@ export function ActiveTripBanner({ trip, onComplete, onPress }: ActiveTripBanner
         </View>
 
         <Text style={[styles.eta, { color: c.textSecondary }]}>
-          Arrives {formatRelativeTime(trip.estimatedEndTime)}
+          {inTransit
+            ? `Arrives ${formatRelativeTime(trip.estimatedEndTime)}`
+            : `Starts ${formatRelativeTime(trip.estimatedStartTime)}`}
         </Text>
       </Pressable>
 
-      <Button variant="primary" size="lg" fullWidth onPress={onComplete} leftIcon="checkmark-circle">
-        Complete Trip
-      </Button>
+      {inTransit ? (
+        <Button variant="primary" size="lg" fullWidth onPress={onComplete} leftIcon="checkmark-circle">
+          Complete Trip
+        </Button>
+      ) : (
+        <Button variant="primary" size="lg" fullWidth onPress={onPress} leftIcon="play">
+          Open &amp; Start Trip
+        </Button>
+      )}
     </View>
   );
 }

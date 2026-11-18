@@ -12,9 +12,9 @@ import { ConfirmBottomSheet } from '@/components/ui/ConfirmBottomSheet';
 import { useActiveTrip } from '@/hooks/useActiveTrip';
 import { useAuthStore } from '@/store/auth.store';
 import * as ticketsApi from '@/api/tickets.api';
-import * as driverApi from '@/api/driver.api';
+import { useDriverMe } from '@/hooks/useDriverMe';
 import { getSlaStatus, getSlaDeadline } from '@/utils/sla';
-import type { DriverAlert, DriverMe, Ticket, TicketPriority } from '@/types/api.types';
+import type { DriverAlert, Ticket, TicketPriority } from '@/types/api.types';
 
 function greeting(): string {
   const h = new Date().getHours();
@@ -117,7 +117,7 @@ function EmptyTripCard({ onCheck, loading }: { onCheck: () => void; loading: boo
       </View>
       <Text style={[styles.emptyTitle, { color: c.textPrimary }]}>Ready to Roll?</Text>
       <Text style={[styles.emptySub, { color: c.textSecondary }]}>
-        You haven&apos;t been assigned any trips for today yet.
+        Waiting for your next trip. You&apos;ll be notified as soon as one is assigned.
       </Text>
       <Button variant="primary" size="lg" fullWidth loading={loading} onPress={onCheck}>
         Check for Assignments
@@ -134,7 +134,7 @@ export default function HomeScreen() {
   const { activeTrip, updateStatus, refresh } = useActiveTrip();
 
   const [openTickets, setOpenTickets] = useState<Ticket[]>([]);
-  const [me, setMe] = useState<DriverMe | null>(null);
+  const { me, reload: reloadMe } = useDriverMe();
   const [refreshing, setRefreshing] = useState(false);
   const [checking, setChecking] = useState(false);
   const [confirmComplete, setConfirmComplete] = useState(false);
@@ -152,27 +152,16 @@ export default function HomeScreen() {
     void loadTickets();
   }, [loadTickets]);
 
-  // Fetch the driver profile for the greeting name (auth user only has username).
+  // The completed-trip count changes when the current trip changes.
   useEffect(() => {
-    let active = true;
-    driverApi
-      .getDriverMe()
-      .then((data) => {
-        if (active) setMe(data);
-      })
-      .catch(() => {
-        // best-effort; fall back to username/'Driver' below
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
+    void reloadMe();
+  }, [activeTrip?.id, reloadMe]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([loadTickets(), refresh()]);
+    await Promise.all([loadTickets(), refresh(), reloadMe()]);
     setRefreshing(false);
-  }, [loadTickets, refresh]);
+  }, [loadTickets, refresh, reloadMe]);
 
   const onCheckAssignments = useCallback(async () => {
     setChecking(true);
@@ -220,6 +209,15 @@ export default function HomeScreen() {
           <EmptyTripCard onCheck={onCheckAssignments} loading={checking} />
         )}
 
+        {/* Lifetime trips completed */}
+        {me?.completedTripCount !== undefined ? (
+          <View style={[styles.statCard, { backgroundColor: c.bgCard, borderColor: c.border }]}>
+            <MaterialCommunityIcons name="check-decagram" size={22} color={brand.teal} />
+            <Text style={[styles.statValue, { color: c.textPrimary }]}>{me.completedTripCount}</Text>
+            <Text style={[styles.statLabel, { color: c.textSecondary }]}>{me.completedTripCount === 1 ? 'trip' : 'trips'} completed</Text>
+          </View>
+        ) : null}
+
         {/* Alerts (only when present) */}
         <AlertsPanel alerts={alerts} onPressAlert={goAlert} />
 
@@ -244,8 +242,6 @@ export default function HomeScreen() {
           <QuickActions
             onReportIssue={() => router.push('/ticket/new')}
             onLogFuel={() => router.push('/fuel/log')}
-            onLogToll={() => router.push('/toll/log')}
-            onMyTrips={() => router.push('/(tabs)/trips')}
             hasCriticalTicket={hasCritical}
           />
         </View>
@@ -304,6 +300,10 @@ const styles = StyleSheet.create({
   },
   emptyTitle: { fontSize: fontSize.lg, fontWeight: fontWeight.bold },
   emptySub: { fontSize: fontSize.sm, textAlign: 'center', lineHeight: 20, marginBottom: spacing.md },
+
+  statCard: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, borderWidth: 1, borderRadius: radius.lg, padding: spacing.md },
+  statValue: { fontSize: fontSize.lg, fontWeight: fontWeight.heavy },
+  statLabel: { fontSize: fontSize.sm },
 
   // Sections
   section: { gap: spacing.md },

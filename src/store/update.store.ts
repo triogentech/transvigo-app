@@ -108,7 +108,7 @@ export const useUpdateStore = create<UpdateState>((set, get) => ({
     }
     try {
       const page = await tripsApi.getTripsPage({ status: 'in_transit', pageSize: 1 });
-      set({ hasActiveTrip: page.trips.length > 0 });
+      set({ hasActiveTrip: page.trips.some((t) => t.currentStatus === 'in_transit') });
     } catch {
       set({ hasActiveTrip: null }); // unknown => treated as "maybe on a trip": never hard-block
     }

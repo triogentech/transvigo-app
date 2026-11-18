@@ -1,5 +1,6 @@
+import { ZoomableImage } from '@/components/ui/ZoomableImage';
 import { useCallback, useEffect, useState } from 'react';
-import { Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -83,7 +84,7 @@ export default function TicketDetailScreen() {
             {ticket.photoUrl ? (
               <View style={{ marginTop: spacing.md }}>
                 <Text style={[styles.fieldLabel, { color: c.textSecondary }]}>Photo</Text>
-                <Image source={{ uri: ticket.photoUrl }} style={styles.ticketPhoto} resizeMode="cover" />
+                <ZoomableImage uri={ticket.photoUrl} style={styles.ticketPhoto} />
               </View>
             ) : null}
           </Card>
