@@ -47,8 +47,8 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "TransVigo uses your location to auto-fill incident reports",
-          "locationWhenInUsePermission": "TransVigo uses your location to auto-fill incident reports"
+          "locationAlwaysAndWhenInUsePermission": "TransVigo records your location when you start and complete a trip and to auto-fill incident reports",
+          "locationWhenInUsePermission": "TransVigo records your location when you start and complete a trip and to auto-fill incident reports"
         }
       ],
       [

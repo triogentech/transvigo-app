@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/Button';
 import { ActiveTripBanner } from '@/components/home/ActiveTripBanner';
 import { QuickActions } from '@/components/home/QuickActions';
 import { AlertsPanel } from '@/components/home/AlertsPanel';
-import { ConfirmBottomSheet } from '@/components/ui/ConfirmBottomSheet';
 import { useActiveTrip } from '@/hooks/useActiveTrip';
 import { useAuthStore } from '@/store/auth.store';
 import * as ticketsApi from '@/api/tickets.api';
@@ -131,13 +130,12 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
-  const { activeTrip, updateStatus, refresh } = useActiveTrip();
+  const { activeTrip, refresh } = useActiveTrip();
 
   const [openTickets, setOpenTickets] = useState<Ticket[]>([]);
   const { me, reload: reloadMe } = useDriverMe();
   const [refreshing, setRefreshing] = useState(false);
   const [checking, setChecking] = useState(false);
-  const [confirmComplete, setConfirmComplete] = useState(false);
 
   const loadTickets = useCallback(async () => {
     try {
@@ -202,7 +200,7 @@ export default function HomeScreen() {
         {activeTrip ? (
           <ActiveTripBanner
             trip={activeTrip}
-            onComplete={() => setConfirmComplete(true)}
+            onComplete={() => router.push({ pathname: '/trip/capture', params: { id: activeTrip.id, stage: 'end' } })}
             onPress={() => router.push(`/trip/${activeTrip.id}`)}
           />
         ) : (
@@ -247,17 +245,6 @@ export default function HomeScreen() {
         </View>
       </ScrollView>
 
-      <ConfirmBottomSheet
-        visible={confirmComplete}
-        onClose={() => setConfirmComplete(false)}
-        onConfirm={() => {
-          setConfirmComplete(false);
-          void updateStatus('completed');
-        }}
-        title="Complete trip?"
-        message="Mark this trip as completed. This confirms you've arrived at the destination."
-        confirmLabel="Complete Trip"
-      />
     </View>
   );
 }

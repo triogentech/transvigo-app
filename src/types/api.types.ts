@@ -118,6 +118,12 @@ export interface Trip {
   estimatedStartTime: string;
   estimatedEndTime: string;
   actualEndTime: string | null;
+  /** Set when the driver starts the trip. */
+  actualStartTime?: string | null;
+  startOdometer?: number | null;
+  startOdometerPhotoUrl?: string | null;
+  endOdometer?: number | null;
+  endOdometerPhotoUrl?: string | null;
   vendorName?: string | null;
   isTouchingLocationAvailable: boolean;
   totalTripDistanceKm?: number;

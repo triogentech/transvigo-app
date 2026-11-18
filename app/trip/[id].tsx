@@ -1,8 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import * as Haptics from 'expo-haptics';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { brand, fontFamily, fontSize, fontWeight, spacing, status as st, useColors } from '@/theme';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
@@ -11,7 +10,7 @@ import { Button } from '@/components/ui/Button';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ErrorBanner } from '@/components/ui/ErrorBanner';
-import { ConfirmBottomSheet } from '@/components/ui/ConfirmBottomSheet';
+import { ZoomableImage } from '@/components/ui/ZoomableImage';
 import { TripStatusStepper } from '@/components/trip/TripStatusStepper';
 import { TripExpenses } from '@/components/trip/TripExpenses';
 import * as tripsApi from '@/api/trips.api';
@@ -19,7 +18,8 @@ import { errMessage } from '@/api/client';
 import { showToast } from '@/store/toast.store';
 import { selectMode, useUpdateStore } from '@/store/update.store';
 import { formatDateTime } from '@/utils/format';
-import type { TripStatus } from '@/types/api.types';
+import { allocatedMinutes, formatDuration, remainingMinutes, useNow } from '@/utils/trip-time';
+import type { Trip, TripStatus } from '@/types/api.types';
 
 export default function TripDetailScreen() {
   const c = useColors();
@@ -30,10 +30,8 @@ export default function TripDetailScreen() {
   const [detail, setDetail] = useState<tripsApi.TripDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [confirm, setConfirm] = useState(false);
   const [expenseOpen, setExpenseOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [acting, setActing] = useState(false);
 
   const load = useCallback(async (silent = false) => {
     if (!id) return;
@@ -52,6 +50,19 @@ export default function TripDetailScreen() {
     void load();
   }, [load]);
 
+  // Coming back from the start/complete screen: refresh silently.
+  const firstFocus = useRef(true);
+  useFocusEffect(
+    useCallback(() => {
+      if (firstFocus.current) {
+        firstFocus.current = false;
+        return;
+      }
+      void load(true);
+    }, [load]),
+  );
+  const now = useNow();
+
   const updateMode = useUpdateStore((u) => selectMode(u));
   const trip = detail?.trip;
   const nextStatus: TripStatus | null =
@@ -60,25 +71,6 @@ export default function TripDetailScreen() {
   // Outdated app / maintenance: starting a NEW trip is blocked (server enforces too);
   // completing an in-progress trip is always allowed.
   const startBlocked = nextStatus === 'in_transit' && (updateMode === 'mandatory' || updateMode === 'maintenance');
-
-  const doTransition = async (): Promise<void> => {
-    if (!trip || !nextStatus || acting) return;
-    setActing(true);
-    try {
-      await tripsApi.updateTripStatus(trip.id, nextStatus);
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      showToast({ type: 'success', message: nextStatus === 'in_transit' ? 'Trip started' : 'Trip completed' });
-      void useUpdateStore.getState().refreshActiveTrip(); // lets a pending mandatory update take over
-      // Drivers can't open past trips: after completing, go back to Home (next trip / waiting state).
-      if (nextStatus === 'completed') router.replace('/(tabs)');
-      else await load();
-    } catch (e) {
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      showToast({ type: 'error', message: errMessage(e, 'Could not update trip') });
-    } finally {
-      setActing(false);
-    }
-  };
 
   return (
     <View style={{ flex: 1, backgroundColor: c.bgPage }}>
@@ -135,9 +127,10 @@ export default function TripDetailScreen() {
               fullWidth
               variant={nextStatus === 'in_transit' ? 'primary' : 'primary'}
               leftIcon={nextStatus === 'in_transit' ? 'play' : 'checkmark-circle'}
-              loading={acting}
               disabled={startBlocked}
-              onPress={() => setConfirm(true)}
+              onPress={() =>
+                router.push({ pathname: '/trip/capture', params: { id: trip.id, stage: nextStatus === 'in_transit' ? 'start' : 'end' } })
+              }
             >
               {nextStatus === 'in_transit' ? 'Start Trip' : 'Complete Trip'}
             </Button>
@@ -152,6 +145,21 @@ export default function TripDetailScreen() {
           ) : null}
 
           <Card style={styles.detailsCard}>
+            <DetailRow label="Allocated time" value={formatDuration(allocatedMinutes(trip))} />
+            {trip.currentStatus === 'in_transit' && trip.actualStartTime ? (
+              <>
+                <DetailRow label="Started" value={formatDateTime(trip.actualStartTime)} />
+                <TimeLeftRow trip={trip} now={now} />
+              </>
+            ) : null}
+            {trip.startOdometer != null ? (
+              <DetailRow label="Start odometer" value={`${trip.startOdometer.toLocaleString('en-IN')} km`} mono />
+            ) : null}
+            {trip.startOdometerPhotoUrl ? (
+              <View style={{ paddingVertical: spacing.sm }}>
+                <ZoomableImage uri={trip.startOdometerPhotoUrl} style={styles.odoPhoto} />
+              </View>
+            ) : null}
             <DetailRow label="Load Provider" value={trip.loadProvider?.name ?? '—'} />
             <DetailRow label="Estimated Start" value={formatDateTime(trip.estimatedStartTime)} />
             <DetailRow label="Estimated End" value={formatDateTime(trip.estimatedEndTime)} />
@@ -199,21 +207,19 @@ export default function TripDetailScreen() {
         </ScrollView>
       )}
 
-      <ConfirmBottomSheet
-        visible={confirm}
-        onClose={() => setConfirm(false)}
-        onConfirm={() => {
-          setConfirm(false);
-          void doTransition();
-        }}
-        title={nextStatus === 'in_transit' ? 'Start trip?' : 'Complete trip?'}
-        message={
-          nextStatus === 'in_transit'
-            ? 'Confirm you are starting this trip now.'
-            : 'Confirm you have arrived and the trip is complete.'
-        }
-        confirmLabel={nextStatus === 'in_transit' ? 'Start Trip' : 'Complete Trip'}
-      />
+    </View>
+  );
+}
+
+function TimeLeftRow({ trip, now }: { trip: Trip; now: Date }) {
+  const c = useColors();
+  const left = remainingMinutes(trip, now);
+  if (left === null) return null;
+  const over = left < 0;
+  return (
+    <View style={[styles.detailRow, { borderBottomColor: c.border }]}>
+      <Text style={[styles.detailLabel, { color: c.textSecondary }]}>{over ? 'Overtime' : 'Time remaining'}</Text>
+      <Text style={[styles.detailValue, { color: over ? st.danger : c.textPrimary }]}>{formatDuration(left)}{over ? ' over' : ''}</Text>
     </View>
   );
 }
@@ -238,6 +244,7 @@ const styles = StyleSheet.create({
   badgeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: spacing.md },
   vehicle: { fontFamily: fontFamily.mono, fontSize: fontSize.sm },
   detailsCard: { gap: 0 },
+  odoPhoto: { width: '100%', height: 140, borderRadius: 8 },
   detailRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',

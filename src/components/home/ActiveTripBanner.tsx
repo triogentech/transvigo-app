@@ -4,6 +4,7 @@ import { brand, fontFamily, fontSize, fontWeight, radius, spacing, useColors } f
 import { Button } from '@/components/ui/Button';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { formatRelativeTime } from '@/utils/format';
+import { formatDuration, remainingMinutes, useNow } from '@/utils/trip-time';
 import type { Trip } from '@/types/api.types';
 
 interface ActiveTripBannerProps {
@@ -16,6 +17,7 @@ interface ActiveTripBannerProps {
 export function ActiveTripBanner({ trip, onComplete, onPress }: ActiveTripBannerProps) {
   const c = useColors();
   const inTransit = trip.currentStatus === 'in_transit';
+  const left = remainingMinutes(trip, useNow());
   return (
     <View style={[styles.card, { backgroundColor: c.bgCard, borderColor: c.border }]}>
       <Pressable onPress={onPress}>
@@ -40,22 +42,22 @@ export function ActiveTripBanner({ trip, onComplete, onPress }: ActiveTripBanner
           </View>
         </View>
 
-        <Text style={[styles.eta, { color: c.textSecondary }]}>
-          {inTransit
-            ? `Arrives ${formatRelativeTime(trip.estimatedEndTime)}`
-            : `Starts ${formatRelativeTime(trip.estimatedStartTime)}`}
-        </Text>
+        {left !== null ? (
+          <Text style={[styles.eta, { color: left < 0 ? '#DC2626' : c.textSecondary }]}>
+            {left < 0 ? `Overtime ${formatDuration(left)}` : `${formatDuration(left)} left of allocated time`}
+          </Text>
+        ) : (
+          <Text style={[styles.eta, { color: c.textSecondary }]}>
+            {inTransit
+              ? `Arrives ${formatRelativeTime(trip.estimatedEndTime)}`
+              : `Starts ${formatRelativeTime(trip.estimatedStartTime)}`}
+          </Text>
+        )}
       </Pressable>
 
-      {inTransit ? (
-        <Button variant="primary" size="lg" fullWidth onPress={onComplete} leftIcon="checkmark-circle">
-          Complete Trip
-        </Button>
-      ) : (
-        <Button variant="primary" size="lg" fullWidth onPress={onPress} leftIcon="play">
-          Open &amp; Start Trip
-        </Button>
-      )}
+      <Button variant="primary" size="lg" fullWidth onPress={inTransit ? onComplete : onPress} leftIcon={inTransit ? 'checkmark-circle' : 'play'}>
+        {inTransit ? 'Complete Trip' : 'Open & Start Trip'}
+      </Button>
     </View>
   );
 }
