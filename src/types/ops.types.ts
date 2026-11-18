@@ -1,3 +1,4 @@
+import type { AckSla, Priority, ResponseStatus } from './maintenance.types';
 // Types for the Operations mobile experience (non-driver roles).
 
 export type JobCardStatus = 'open' | 'in_progress' | 'quality_check' | 'closed' | 'cancelled';
@@ -6,12 +7,20 @@ export interface JobCard {
   jobCardNumber: string;
   status: JobCardStatus;
   vehicle?: { id: string; vehicleNumber: string } | null;
+  driver?: { id: string; fullName: string } | null;
   driverComplaint: string;
   garage?: { id: string; name: string } | null;
   supervisor?: { id: string; username: string } | null;
   entryOdometer: number;
   totalJobCost: string | number;
   entryTime: string;
+  priority?: Priority;
+  source?: 'ops' | 'driver_report';
+  responseStatus?: ResponseStatus;
+  acknowledgedAt?: string | null;
+  resolvedAt?: string | null;
+  sla?: AckSla | null;
+  _count?: { spareIssueSlips: number; messages: number };
 }
 export interface CreateJobCardBody {
   vehicleId: string;

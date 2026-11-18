@@ -11,6 +11,9 @@ import { AlertsPanel } from '@/components/home/AlertsPanel';
 import { useActiveTrip } from '@/hooks/useActiveTrip';
 import { useAuthStore } from '@/store/auth.store';
 import * as ticketsApi from '@/api/tickets.api';
+import * as maintenanceApi from '@/api/maintenance.api';
+import { ReportMeta } from '@/components/maintenance/ReportMeta';
+import type { MaintenanceReport } from '@/types/maintenance.types';
 import { useDriverMe } from '@/hooks/useDriverMe';
 import { getSlaStatus, getSlaDeadline } from '@/utils/sla';
 import type { DriverAlert, Ticket, TicketPriority } from '@/types/api.types';
@@ -133,6 +136,7 @@ export default function HomeScreen() {
   const { activeTrip, refresh } = useActiveTrip();
 
   const [openTickets, setOpenTickets] = useState<Ticket[]>([]);
+  const [reports, setReports] = useState<MaintenanceReport[]>([]);
   const { me, reload: reloadMe } = useDriverMe();
   const [refreshing, setRefreshing] = useState(false);
   const [checking, setChecking] = useState(false);
@@ -146,9 +150,18 @@ export default function HomeScreen() {
     }
   }, []);
 
+  const loadReports = useCallback(async () => {
+    try {
+      setReports((await maintenanceApi.listReports()).filter((r) => r.responseStatus !== 'resolved').slice(0, 3));
+    } catch {
+      // best-effort
+    }
+  }, []);
+
   useEffect(() => {
     void loadTickets();
-  }, [loadTickets]);
+    void loadReports();
+  }, [loadTickets, loadReports]);
 
   // The completed-trip count changes when the current trip changes.
   useEffect(() => {
@@ -157,9 +170,9 @@ export default function HomeScreen() {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([loadTickets(), refresh(), reloadMe()]);
+    await Promise.all([loadTickets(), loadReports(), refresh(), reloadMe()]);
     setRefreshing(false);
-  }, [loadTickets, refresh, reloadMe]);
+  }, [loadTickets, loadReports, refresh, reloadMe]);
 
   const onCheckAssignments = useCallback(async () => {
     setChecking(true);
@@ -219,6 +232,28 @@ export default function HomeScreen() {
         {/* Alerts (only when present) */}
         <AlertsPanel alerts={alerts} onPressAlert={goAlert} />
 
+        {/* Open maintenance reports */}
+        {reports.length > 0 ? (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.sectionTitle, { color: c.textTertiary }]}>MAINTENANCE REPORTS</Text>
+              <Pressable onPress={() => router.push('/maintenance')} hitSlop={8}>
+                <Text style={[styles.viewAll, { color: brand.teal }]}>View All</Text>
+              </Pressable>
+            </View>
+            {reports.map((r) => (
+              <Pressable
+                key={r.id}
+                onPress={() => router.push(`/maintenance/${r.id}`)}
+                style={[styles.ticketRow, { backgroundColor: c.bgCard, borderColor: c.border, flexDirection: 'column', alignItems: 'flex-start' }]}
+              >
+                <Text style={[styles.ticketTitle, { color: c.textPrimary }]} numberOfLines={1}>{r.driverComplaint}</Text>
+                <ReportMeta priority={r.priority} responseStatus={r.responseStatus} sla={r.sla} />
+              </Pressable>
+            ))}
+          </View>
+        ) : null}
+
         {/* Recent tickets */}
         {openTickets.length > 0 ? (
           <View style={styles.section}>
@@ -238,6 +273,7 @@ export default function HomeScreen() {
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: c.textTertiary }]}>QUICK ACTIONS</Text>
           <QuickActions
+            onReportMaintenance={() => router.push('/maintenance/new')}
             onReportIssue={() => router.push('/ticket/new')}
             onLogFuel={() => router.push('/fuel/log')}
             hasCriticalTicket={hasCritical}

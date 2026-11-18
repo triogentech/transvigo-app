@@ -4,6 +4,9 @@ import { fontSize, fontWeight, radius, spacing, useColors } from '@/theme';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
+import { Pressable } from 'react-native';
+import { useRouter } from 'expo-router';
+import { ReportMeta } from '@/components/maintenance/ReportMeta';
 import { OpsListScaffold } from '@/components/ops/OpsListScaffold';
 import { OpsModal } from '@/components/ops/OpsModal';
 import { useOpsList } from '@/hooks/useOpsList';
@@ -24,6 +27,7 @@ const STATUS_OPTS: SelectOption[] = (Object.keys(STATUS) as JobCardStatus[]).map
 
 export default function OpsJobCards() {
   const c = useColors();
+  const router = useRouter();
   const { items, loading, error, reload } = useOpsList(ops.getJobCards);
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -77,6 +81,7 @@ export default function OpsJobCards() {
     <OpsListScaffold title="Job Cards" loading={loading} error={error} empty={items.length === 0} onRefresh={reload} onAdd={() => setOpen(true)}>
       {items.map((jc) => (
         <Card key={jc.id} style={styles.card}>
+          <Pressable onPress={() => router.push(`/job-card/${jc.id}`)} style={{ gap: spacing.xs }}>
           <View style={styles.row}>
             <Text style={[styles.num, { color: c.textPrimary }]}>{jc.jobCardNumber}</Text>
             <View style={[styles.pill, { backgroundColor: `${STATUS[jc.status].color}1A` }]}>
@@ -89,6 +94,11 @@ export default function OpsJobCards() {
           </Text>
           <Text style={[styles.meta, { color: c.textTertiary }]}>Reported issue</Text>
           <Text style={[styles.complaint, { color: c.textPrimary }]}>{jc.driverComplaint}</Text>
+          {jc.source === 'driver_report' ? <ReportMeta priority={jc.priority} responseStatus={jc.responseStatus} sla={jc.sla} /> : null}
+          <Text style={{ color: c.textTertiary, fontSize: fontSize.xs }}>
+            {jc._count?.messages ? `${jc._count.messages} message${jc._count.messages === 1 ? '' : 's'} · ` : ''}Tap to open
+          </Text>
+          </Pressable>
           <Select value={jc.status} onChange={(v) => changeStatus(jc.id, v as JobCardStatus)} options={STATUS_OPTS} label="Set status" />
           <Select value={jc.supervisor?.id ?? null} onChange={(v) => assign(jc.id, v)} options={assignees} label="Assign to" placeholder="Unassigned" searchable />
         </Card>

@@ -4,6 +4,7 @@ import * as Haptics from 'expo-haptics';
 import { fontSize, fontWeight, radius, spacing, status as st, useColors } from '@/theme';
 
 interface QuickActionsProps {
+  onReportMaintenance: () => void;
   onReportIssue: () => void;
   onLogFuel: () => void;
   hasCriticalTicket?: boolean;
@@ -22,6 +23,7 @@ interface Tile {
 }
 
 export function QuickActions({
+  onReportMaintenance,
   onReportIssue,
   onLogFuel,
   hasCriticalTicket,
@@ -29,6 +31,7 @@ export function QuickActions({
   const c = useColors();
 
   const tiles: Tile[] = [
+    { key: 'maintenance', label: 'Report Maintenance', lib: 'mci', icon: 'wrench', color: '#2563EB', tint: '#EAF1FE', onPress: onReportMaintenance },
     { key: 'issue', label: 'Report Issue', lib: 'ion', icon: 'warning-outline', color: '#EA580C', tint: '#FEF1E6', onPress: onReportIssue, danger: hasCriticalTicket },
     { key: 'fuel', label: 'Log Fuel', lib: 'mci', icon: 'gas-station', color: '#2563EB', tint: '#EAF1FE', onPress: onLogFuel },
   ];

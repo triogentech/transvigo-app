@@ -2,6 +2,7 @@ import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import * as driverApi from '@/api/driver.api';
+import { useAuthStore } from '@/store/auth.store';
 
 /**
  * True when running inside Expo Go. Remote push notifications were removed from
@@ -76,6 +77,11 @@ export function routeForNotification(data: Record<string, unknown> | undefined):
   }
   if (type === 'TRIP_ASSIGNED' && data.tripId) {
     return `/trip/${String(data.tripId)}`;
+  }
+  if ((type === 'JOB_CARD_MESSAGE' || type === 'JOB_CARD_REPORTED') && data.jobCardId) {
+    // Staff open the ops job-card screen; drivers open their own report.
+    const staff = useAuthStore.getState().user?.role !== 'Driver';
+    return staff ? `/job-card/${String(data.jobCardId)}` : `/maintenance/${String(data.jobCardId)}`;
   }
   if (type === 'SERVICE_DUE') {
     return '/(tabs)/profile';

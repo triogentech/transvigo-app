@@ -1,5 +1,6 @@
 import { api } from './client';
 import type { Paginated } from '@/types/api.types';
+import type { ThreadMessage } from '@/types/maintenance.types';
 import type {
   CreateInvoiceBody, CreateIssueSlipBody, CreateJobCardBody, CreateSparePartBody, CreateTyreBody,
   CreateTyreMovementBody, GarageLog, InvoicePaymentStatus, JobCard, JobCardStatus,
@@ -17,6 +18,12 @@ export const getJobCards = () => list<JobCard>('/api/job-cards');
 export const createJobCard = (body: CreateJobCardBody) => api.post<JobCard>('/api/job-cards', body).then((r) => r.data);
 export const setJobCardStatus = (id: string, status: JobCardStatus) =>
   api.put<JobCard>(`/api/job-cards/${id}/status`, { status }).then((r) => r.data);
+export const getJobCard = (id: string) => api.get<JobCard>(`/api/job-cards/${id}`).then((r) => r.data);
+export const getJobCardMessages = (id: string) =>
+  api.get<ThreadMessage[]>(`/api/job-cards/${id}/messages`).then((r) => r.data);
+export const postJobCardMessage = (id: string, body: string) =>
+  api.post<{ message: ThreadMessage; acknowledgedNow: boolean; jobCard: JobCard }>(`/api/job-cards/${id}/messages`, { body }).then((r) => r.data);
+export const resolveJobCard = (id: string) => api.put<JobCard>(`/api/job-cards/${id}/resolve`, {}).then((r) => r.data);
 export const assignJobCard = (id: string, supervisorId: string) =>
   api.put<JobCard>(`/api/job-cards/${id}`, { supervisorId }).then((r) => r.data);
 
