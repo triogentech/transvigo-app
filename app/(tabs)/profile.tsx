@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Alert, Linking, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
@@ -8,6 +8,7 @@ import { brand, fontFamily, fontSize, fontWeight, radius, spacing, status as st,
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { confirmAction } from '@/utils/confirm';
+import { usePushStatusView } from '@/hooks/usePushStatusView';
 import { useAuthStore } from '@/store/auth.store';
 import { useThemeStore, type ThemeMode } from '@/store/theme.store';
 import * as driverApi from '@/api/driver.api';
@@ -23,7 +24,7 @@ export default function ProfileScreen() {
 
   const [me, setMe] = useState<DriverMe | null>(null);
   const [schedules, setSchedules] = useState<ServiceSchedule[]>([]);
-  const [notifications, setNotifications] = useState(true);
+  const push = usePushStatusView();
 
   useEffect(() => {
     let active = true;
@@ -120,7 +121,8 @@ export default function ProfileScreen() {
         <SettingsRow
           icon="notifications-outline"
           label="Notifications"
-          right={<Switch value={notifications} onValueChange={setNotifications} />}
+          onPress={push.onPress}
+          right={<Text style={[styles.rowValue, { color: push.color }]}>{push.text}</Text>}
         />
         <ThemeModeRow />
         <SettingsRow icon="information-circle-outline" label="App Version" right={<Text style={[styles.rowValue, { color: c.textTertiary }]}>{version}</Text>} />

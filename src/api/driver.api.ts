@@ -29,6 +29,10 @@ export async function registerPushToken(
   await api.patch('/api/driver/push-token', { token, platform });
 }
 
+export async function unregisterPushToken(): Promise<void> {
+  await api.delete('/api/driver/push-token');
+}
+
 export async function getServiceSchedules(
   params: { vehicleId?: string; status?: string } = {},
 ): Promise<ServiceSchedule[]> {

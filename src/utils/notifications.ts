@@ -3,6 +3,7 @@ import * as Notifications from 'expo-notifications';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import * as driverApi from '@/api/driver.api';
 import { useAuthStore } from '@/store/auth.store';
+import { usePushStore } from '@/store/push.store';
 
 /**
  * True when running inside Expo Go. Remote push notifications were removed from
@@ -47,7 +48,10 @@ export async function configureAndroidChannels(): Promise<void> {
  */
 export async function registerForPushNotifications(): Promise<void> {
   // Remote push is unavailable in Expo Go (removed in SDK 53) — skip cleanly.
-  if (isExpoGo) return;
+  if (isExpoGo || Platform.OS === 'web') {
+    usePushStore.getState().set('unsupported');
+    return;
+  }
   try {
     await configureAndroidChannels();
 
@@ -57,15 +61,34 @@ export async function registerForPushNotifications(): Promise<void> {
       const requested = await Notifications.requestPermissionsAsync();
       granted = requested.granted;
     }
-    if (!granted) return;
+    if (!granted) {
+      usePushStore.getState().set('denied');
+      return;
+    }
 
     const projectId = Constants.expoConfig?.extra?.eas?.projectId as string | undefined;
     const tokenResponse = await Notifications.getExpoPushTokenAsync(projectId ? { projectId } : undefined);
     const platform = Platform.OS === 'ios' ? 'ios' : 'android';
     await driverApi.registerPushToken(tokenResponse.data, platform);
-  } catch {
-    // Push registration must never block the app.
+    usePushStore.getState().set('registered');
+  } catch (e) {
+    // Never block the app, but do not hide it either: a missing Firebase config (no
+    // google-services.json in the build) fails right here and means NO push on the phone.
+    const message = e instanceof Error ? e.message : String(e);
+    // eslint-disable-next-line no-console
+    console.warn('[push] registration failed:', message);
+    usePushStore.getState().set('error', message);
   }
+}
+
+/** Sign-out: tell the server this phone no longer belongs to the user (best-effort). */
+export async function unregisterPushNotifications(): Promise<void> {
+  try {
+    await driverApi.unregisterPushToken();
+  } catch {
+    // ignore
+  }
+  usePushStore.getState().set('unknown');
 }
 
 /** Maps a notification's data payload to an in-app route. */
@@ -82,6 +105,15 @@ export function routeForNotification(data: Record<string, unknown> | undefined):
     // Staff open the ops job-card screen; drivers open their own report.
     const staff = useAuthStore.getState().user?.role !== 'Driver';
     return staff ? `/job-card/${String(data.jobCardId)}` : `/maintenance/${String(data.jobCardId)}`;
+  }
+  if (type === 'TICKET_ASSIGNED' && data.ticketId) {
+    return `/ticket/${String(data.ticketId)}`;
+  }
+  if (type === 'JOB_CARD_ASSIGNED' && data.jobCardId) {
+    return `/job-card/${String(data.jobCardId)}`;
+  }
+  if (type === 'DRIVER_LOCATION_DENIED') {
+    return '/(ops)/trips';
   }
   if (type === 'SERVICE_DUE') {
     return '/(tabs)/profile';

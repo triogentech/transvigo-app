@@ -7,6 +7,7 @@ import { brand, fontSize, fontWeight, spacing, status as st, useColors } from '@
 import { Card } from '@/components/ui/Card';
 import { AppearanceSelector } from '@/components/AppearanceSelector';
 import { confirmAction } from '@/utils/confirm';
+import { usePushStatusView } from '@/hooks/usePushStatusView';
 import { useAuthStore } from '@/store/auth.store';
 import { initialsOf } from '@/utils/format';
 
@@ -16,6 +17,7 @@ export default function OpsProfile() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
+  const push = usePushStatusView();
   const version = Constants.expoConfig?.version ?? '1.0.0';
 
   const confirmSignOut = () => {
@@ -38,6 +40,7 @@ export default function OpsProfile() {
 
       <Card style={{ padding: 0 }}>
         <Row icon="key-outline" label="Change Password" onPress={() => router.push('/(auth)/change-password')} />
+        <Row icon="notifications-outline" label="Notifications" onPress={push.onPress} right={<Text style={{ color: push.color, fontSize: fontSize.sm }}>{push.text}</Text>} />
         <Row icon="information-circle-outline" label="App Version" right={<Text style={{ color: c.textTertiary, fontSize: fontSize.sm }}>{version}</Text>} />
       </Card>
 

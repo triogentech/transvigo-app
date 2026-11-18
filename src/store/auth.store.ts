@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { create } from 'zustand';
 import * as authApi from '@/api/auth.api';
+import { unregisterPushNotifications } from '@/utils/notifications';
 import { clearClientAuth, markAuthReady, registerAuthHandlers, setClientAuth } from '@/api/client';
 import * as tokenStorage from '@/utils/token-storage';
 import { isExpired } from '@/utils/jwt';
@@ -67,6 +68,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   logout: async () => {
+    // Detach this phone from the account while the session is still valid.
+    await unregisterPushNotifications();
     try {
       await authApi.logout();
     } catch {
