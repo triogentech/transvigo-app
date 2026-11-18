@@ -13,14 +13,19 @@
 
 # Add any project specific keep options here:
 
-# --- Libraries that are reached through JNI / reflection. Most ship consumer rules;
-# these are belt-and-braces so R8 can never strip them from a release build.
--keep class com.mrousavy.mmkv.** { *; }
--keep class com.tencent.mmkv.** { *; }
+# @generated begin expo-build-properties - expo prebuild (DO NOT MODIFY)
+# react-native-reanimated / worklets
+-keep class com.swmansion.reanimated.** { *; }
 -keep class com.swmansion.worklets.** { *; }
+-keep class com.facebook.react.turbomodule.** { *; }
+# Libraries reached through JNI / reflection (belt and braces; most ship consumer rules)
 -keep class com.swmansion.gesturehandler.** { *; }
 -keep class com.facebook.hermes.unicode.** { *; }
 -keep class com.facebook.jni.** { *; }
 -keep class expo.modules.** { *; }
+-keep class com.margelo.nitro.** { *; }
+-keep class com.mrousavy.mmkv.** { *; }
+-keep class com.tencent.mmkv.** { *; }
 -keep class com.google.android.play.core.** { *; }
 -dontwarn com.google.android.play.core.**
+# @generated end expo-build-properties

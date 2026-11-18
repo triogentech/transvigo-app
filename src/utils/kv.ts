@@ -33,12 +33,12 @@ export function createKV(id: string): KVStore {
     // Lazy require so a missing/incompatible native module degrades gracefully
     // instead of crashing the whole module graph at import time (which also broke
     // expo-router's route default-export detection).
-    const { MMKV } = require('react-native-mmkv') as typeof import('react-native-mmkv');
-    const mmkv = new MMKV({ id });
+    const { createMMKV } = require('react-native-mmkv') as typeof import('react-native-mmkv');
+    const mmkv = createMMKV({ id }); // react-native-mmkv v4 (Nitro): factory instead of `new MMKV`, remove() instead of delete()
     return {
       getString: (k) => mmkv.getString(k),
       set: (k, v) => mmkv.set(k, v),
-      delete: (k) => mmkv.delete(k),
+      delete: (k) => void mmkv.remove(k),
       getAllKeys: () => mmkv.getAllKeys(),
     };
   } catch {

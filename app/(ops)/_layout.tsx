@@ -19,7 +19,7 @@ export default function OpsTabsLayout() {
         options={{
           title: 'Hub',
           tabBarIcon: ({ color, focused, size }) => (
-            <Ionicons name={focused ? 'grid' : 'grid-outline'} size={size} color={color} />
+            <Ionicons name={focused ? 'grid' : 'grid-outline'} size={size} color={color as string} />
           ),
         }}
       />
@@ -28,7 +28,7 @@ export default function OpsTabsLayout() {
         options={{
           title: 'Tickets',
           tabBarIcon: ({ color, focused, size }) => (
-            <Ionicons name={focused ? 'alert-circle' : 'alert-circle-outline'} size={size} color={color} />
+            <Ionicons name={focused ? 'alert-circle' : 'alert-circle-outline'} size={size} color={color as string} />
           ),
         }}
       />
@@ -37,7 +37,7 @@ export default function OpsTabsLayout() {
         options={{
           title: 'Job Cards',
           tabBarIcon: ({ color, focused, size }) => (
-            <Ionicons name={focused ? 'construct' : 'construct-outline'} size={size} color={color} />
+            <Ionicons name={focused ? 'construct' : 'construct-outline'} size={size} color={color as string} />
           ),
         }}
       />
@@ -46,7 +46,7 @@ export default function OpsTabsLayout() {
         options={{
           title: 'Profile',
           tabBarIcon: ({ color, focused, size }) => (
-            <Ionicons name={focused ? 'person' : 'person-outline'} size={size} color={color} />
+            <Ionicons name={focused ? 'person' : 'person-outline'} size={size} color={color as string} />
           ),
         }}
       />

@@ -85,7 +85,7 @@ export default function TicketsScreen() {
           onEndReached={() => {
             if (hasMore) void fetchMore();
           }}
-          ListFooterComponent={loadingMore ? <ActivityIndicator color={brand.navy} style={{ marginVertical: spacing.lg }} /> : null}
+          ListFooterComponent={loadingMore ? <ActivityIndicator color={brand.navy} style={{ marginVertical: spacing.lg }} /> : undefined}
           ListEmptyComponent={<EmptyState icon="checkmark-circle-outline" title="No tickets" subtitle="All good! No issues reported." />}
         />
       )}

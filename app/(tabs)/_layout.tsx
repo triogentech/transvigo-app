@@ -39,7 +39,7 @@ export default function TabsLayout() {
           title: 'Home',
           tabBarBadge: badge,
           tabBarIcon: ({ color, focused, size }) => (
-            <Ionicons name={focused ? 'home' : 'home-outline'} size={size} color={color} />
+            <Ionicons name={focused ? 'home' : 'home-outline'} size={size} color={color as string} />
           ),
         }}
       />
@@ -48,7 +48,7 @@ export default function TabsLayout() {
         options={{
           title: 'Trips',
           tabBarIcon: ({ color, focused, size }) => (
-            <Ionicons name={focused ? 'map' : 'map-outline'} size={size} color={color} />
+            <Ionicons name={focused ? 'map' : 'map-outline'} size={size} color={color as string} />
           ),
         }}
       />
@@ -58,7 +58,7 @@ export default function TabsLayout() {
           title: 'Tickets',
           tabBarBadge: badge,
           tabBarIcon: ({ color, focused, size }) => (
-            <Ionicons name={focused ? 'alert-circle' : 'alert-circle-outline'} size={size} color={color} />
+            <Ionicons name={focused ? 'alert-circle' : 'alert-circle-outline'} size={size} color={color as string} />
           ),
         }}
       />
@@ -67,7 +67,7 @@ export default function TabsLayout() {
         options={{
           title: 'Profile',
           tabBarIcon: ({ color, focused, size }) => (
-            <Ionicons name={focused ? 'person' : 'person-outline'} size={size} color={color} />
+            <Ionicons name={focused ? 'person' : 'person-outline'} size={size} color={color as string} />
           ),
         }}
       />
