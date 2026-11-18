@@ -1,6 +1,7 @@
 import { api } from './client';
 import type { Paginated } from '@/types/api.types';
 import type { ThreadMessage } from '@/types/maintenance.types';
+import type { CreateVendorBody, UpdateVendorBody, Vendor, VendorType } from '@/types/vendors.types';
 import type {
   CreateInvoiceBody, CreateIssueSlipBody, CreateJobCardBody, CreateSparePartBody, CreateTyreBody,
   CreateTyreMovementBody, GarageLog, InvoicePaymentStatus, JobCard, JobCardStatus,
@@ -92,3 +93,32 @@ export const getVendorOptions = async (): Promise<SelectOption[]> => {
   const res = await api.get<SelectOption[]>('/api/select/spare-vendors');
   return res.data;
 };
+
+// ── Vendors (load provider vendors, garages / workshops, spare parts vendors) ──
+export const getVendors = async (type?: VendorType, search?: string): Promise<{ data: Vendor[]; counts: Record<VendorType, number> }> => {
+  const res = await api.get<{ data: Vendor[]; counts: Record<VendorType, number> }>('/api/vendors', { params: { pageSize: 200, ...(type ? { type } : {}), ...(search ? { search } : {}) } });
+  return res.data;
+};
+export const createVendor = (body: CreateVendorBody) => api.post<Vendor>('/api/vendors', body).then((r) => r.data);
+export const updateVendor = (id: string, body: UpdateVendorBody) => api.put<Vendor>(`/api/vendors/${id}`, body).then((r) => r.data);
+
+/** Vendors that can bill an invoice or supply parts: spare parts vendors and garages, labelled "Name · CODE". */
+export const getSupplierOptions = async (): Promise<SelectOption[]> => {
+  const [sp, ga] = await Promise.all([
+    api.get<SelectOption[]>('/api/select/vendors', { params: { status: 'spare_parts' } }),
+    api.get<SelectOption[]>('/api/select/vendors', { params: { status: 'garage' } }),
+  ]);
+  return [...sp.data, ...ga.data].sort((a, b) => a.label.localeCompare(b.label));
+};
+export const getVendorOptionsByType = async (type: VendorType): Promise<SelectOption[]> => {
+  const res = await api.get<SelectOption[]>('/api/select/vendors', { params: { status: type } });
+  return res.data;
+};
+
+/** Job cards still being worked on for a vehicle, newest first (the one an issue slip links to). */
+export const getOpenJobCards = async (vehicleId: string): Promise<JobCard[]> => {
+  const res = await api.get<Paginated<JobCard>>('/api/job-cards', { params: { vehicleId, openOnly: 'true', pageSize: 10 } });
+  return res.data.data;
+};
+export const updateInvoice = (id: string, body: { paidAmount?: number; paymentMode?: 'cash' | 'credit'; vendorId?: string | null; totalAmount?: number }) =>
+  api.put<SupplierInvoice>(`/api/invoices/${id}`, body).then((r) => r.data);
