@@ -21,12 +21,17 @@ real notification messages, so Android shows them even when the app is closed. T
 | **Driver location is off** | A driver cannot start or complete a trip because location is denied or unavailable (at most once per trip and stage every 10 minutes) | The trips list |
 | **You've been assigned Ticket / Job Card {no}** | An item is assigned to them manually or automatically | The ticket / job card |
 
-### Email only (no push yet)
-A driver raises a ticket, logs fuel, or logs a toll: staff get an email, not a push.
+### Reminders (sent once each, by a background check that runs every minute)
+| Notification | When | To | Opens |
+| --- | --- | --- | --- |
+| **Reply due in N min** | A driver's maintenance report enters the last quarter of its reply window | The assigned supervisor (all staff if unassigned) | The job card |
+| **OVERDUE: {priority} report** | The reply deadline has passed with no reply | The supervisor and all staff | The job card |
+| **Ticket {no}: N left of its SLA** / **past its SLA** | A ticket is in the last quarter of its SLA / past it | The assignee; staff too when past it | The ticket |
+| **Service due / overdue: {vehicle}** | A vehicle's service is within 1,000 km of due / past due. The trip odometer readings drive this | The vehicle's driver; staff too when overdue | Profile |
+| **{PRIORITY} ticket · {vehicle}** | A driver raises a ticket | All staff | The ticket |
 
-### The app understands these, but nothing sends them yet
-`TICKET_SLA_WARNING` and `SERVICE_DUE`. There is also no push when a maintenance report's reply deadline is about to pass
-or has passed.
+### Email only (no push)
+A driver logs fuel or a toll: staff get an email, not a push.
 
 ## Making it work when the app is closed (Android)
 
