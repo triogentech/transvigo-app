@@ -7,11 +7,6 @@
     "orientation": "default",
     "userInterfaceStyle": "automatic",
     "icon": "./assets/images/icon.png",
-    "splash": {
-      "image": "./assets/images/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#FFFFFF"
-    },
     "assetBundlePatterns": [
       "**/*"
     ],
@@ -42,6 +37,7 @@
       "expo-router",
       "expo-secure-store",
       "expo-font",
+      ["expo-splash-screen", { "image": "./assets/images/splash.png", "resizeMode": "contain", "backgroundColor": "#FFFFFF" }],
       [
         "expo-image-picker",
         {
