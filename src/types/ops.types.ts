@@ -12,6 +12,7 @@ export interface JobCard {
   garage?: { id: string; name: string } | null;
   supervisor?: { id: string; username: string } | null;
   entryOdometer: number;
+  entryOdometerPhotoUrl?: string | null;
   totalJobCost: string | number;
   entryTime: string;
   priority?: Priority;

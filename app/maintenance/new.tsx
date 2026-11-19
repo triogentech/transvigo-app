@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
+import * as ImagePicker from 'expo-image-picker';
+import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { brand, fontSize, fontWeight, radius, spacing, status as st, useColors } from '@/theme';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
@@ -29,6 +31,7 @@ export default function NewMaintenanceReport() {
   const [description, setDescription] = useState('');
   const [odometer, setOdometer] = useState('');
   const [priority, setPriority] = useState<Priority>('medium');
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,18 +42,37 @@ export default function NewMaintenanceReport() {
     router.back();
   };
 
+  const takePhoto = async (): Promise<void> => {
+    const perm = await ImagePicker.requestCameraPermissionsAsync();
+    if (!perm.granted) {
+      showToast({ type: 'error', message: 'Camera permission is needed to photograph the odometer' });
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({ quality: 0.6 });
+    if (!result.canceled && result.assets[0]) setPhotoUri(result.assets[0].uri);
+  };
+
   const submit = async (): Promise<void> => {
     if (busy) return;
     setError(null);
     const km = Number(odometer);
     if (description.trim().length < 3) return setError('Describe the problem');
     if (!odometer.trim() || !Number.isInteger(km) || km < 0) return setError('Enter the odometer reading in whole kilometres');
+    const online = useOfflineStore.getState().isOnline;
+    if (online && !photoUri) return setError('Take a photo of the odometer');
     const body: CreateMaintenanceReportBody = { description: description.trim(), odometer: km, priority };
 
     setBusy(true);
     try {
       if (!useOfflineStore.getState().isOnline) return queueOffline(body);
       const report = await maintenanceApi.createReport(body);
+      if (photoUri) {
+        try {
+          await maintenanceApi.uploadReportOdometerPhoto(report.id, photoUri);
+        } catch {
+          showToast({ type: 'warning', message: 'Report sent, but the odometer photo did not upload' });
+        }
+      }
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       showToast({ type: 'success', message: `Sent. The office will reply within ${ackWindowLabel(PRIORITY[priority].ackMinutes)}.` });
       router.replace(`/maintenance/${report.id}`);
@@ -89,6 +111,24 @@ export default function NewMaintenanceReport() {
             placeholder={vehicle?.odometerReading ? `Last reading ${vehicle.odometerReading.toLocaleString('en-IN')}` : 'e.g. 125430'}
             leftIcon="speedometer-outline"
           />
+
+          <View style={{ gap: spacing.sm }}>
+            <Text style={[styles.label, { color: c.textSecondary }]}>Photo of the odometer</Text>
+            {photoUri ? (
+              <View>
+                <Image source={{ uri: photoUri }} style={styles.photo} resizeMode="cover" />
+                <Pressable onPress={takePhoto} style={[styles.retake, { backgroundColor: c.bgSurface, borderColor: c.border }]}>
+                  <Ionicons name="camera-reverse-outline" size={16} color={c.textPrimary} />
+                  <Text style={{ color: c.textPrimary, fontSize: fontSize.sm, fontWeight: fontWeight.semibold }}>Retake</Text>
+                </Pressable>
+              </View>
+            ) : (
+              <Pressable onPress={takePhoto} style={[styles.photoBtn, { borderColor: c.border, backgroundColor: c.bgSunken }]}>
+                <Ionicons name="camera-outline" size={28} color={brand.teal} />
+                <Text style={{ color: c.textPrimary, fontWeight: fontWeight.semibold }}>Take photo</Text>
+              </Pressable>
+            )}
+          </View>
 
           <View style={{ gap: spacing.sm }}>
             <Text style={[styles.label, { color: c.textSecondary }]}>How urgent is it?</Text>
@@ -132,5 +172,8 @@ const styles = StyleSheet.create({
   vehicleNumber: { fontSize: fontSize.lg, fontWeight: fontWeight.bold },
   label: { fontSize: fontSize.sm, fontWeight: fontWeight.semibold },
   chips: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },
+  photoBtn: { height: 120, borderWidth: 1, borderStyle: 'dashed', borderRadius: radius.lg, alignItems: 'center', justifyContent: 'center', gap: spacing.xs },
+  photo: { width: '100%', height: 200, borderRadius: radius.lg },
+  retake: { position: 'absolute', right: 8, bottom: 8, flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: spacing.md, paddingVertical: 6, borderRadius: radius.full, borderWidth: 1 },
   chip: { paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, borderRadius: radius.full, borderWidth: 1.5 },
 });

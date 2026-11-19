@@ -24,6 +24,7 @@ export interface MaintenanceReport {
   responseStatus: ResponseStatus;
   driverComplaint: string;
   entryOdometer: number;
+  entryOdometerPhotoUrl?: string | null;
   entryTime: string;
   acknowledgedAt: string | null;
   resolvedAt: string | null;

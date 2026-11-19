@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { fontSize, fontWeight, spacing, useColors } from '@/theme';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { Card } from '@/components/ui/Card';
+import { ZoomableImage } from '@/components/ui/ZoomableImage';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ErrorBanner } from '@/components/ui/ErrorBanner';
 import { ReportMeta } from '@/components/maintenance/ReportMeta';
@@ -91,6 +92,9 @@ export default function MaintenanceReportDetail() {
               <Text style={{ color: c.textSecondary, fontSize: fontSize.sm }}>
                 {report.vehicle.vehicleNumber} · {report.entryOdometer.toLocaleString('en-IN')} km · {formatDateTime(report.entryTime)}
               </Text>
+              {report.entryOdometerPhotoUrl ? (
+                <ZoomableImage uri={report.entryOdometerPhotoUrl} style={{ width: '100%', height: 180, borderRadius: 12 }} />
+              ) : null}
               {report.responseStatus === 'resolved' && report.resolvedAt ? (
                 <Text style={{ color: c.textSecondary, fontSize: fontSize.sm }}>Resolved {formatDateTime(report.resolvedAt)}</Text>
               ) : null}
