@@ -5,13 +5,14 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { brand, fontFamily, fontSize, fontWeight, radius, spacing, useColors } from '@/theme';
+import { brand, fontFamily, fontSize, fontWeight, radius, spacing, status as st, useColors } from '@/theme';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { Input } from '@/components/ui/Input';
 import { Select, type SelectItem } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
 import { DateField } from '@/components/ui/DateField';
 import * as fuelApi from '@/api/fuel-logs.api';
+import { FuelStationQuickAdd } from '@/components/fuel/FuelStationQuickAdd';
 import * as driverApi from '@/api/driver.api';
 import { errMessage, isNetworkError } from '@/api/client';
 import { addToQueue } from '@/utils/offline-queue';
@@ -39,6 +40,7 @@ export default function LogFuelScreen() {
   const [rate, setRate] = useState('');
   const [selectedTrip, setSelectedTrip] = useState<string | null>(tripId ?? null);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [addStation, setAddStation] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -81,6 +83,7 @@ export default function LogFuelScreen() {
     setError(null);
     const quantity = Number(qty);
     const ratePerL = Number(rate);
+    if (!stationId) return setError('Select the fuel station (or add it if it is not in the list)');
     if (!quantity || quantity <= 0) return setError('Enter the fuel quantity');
     if (!ratePerL || ratePerL <= 0) return setError('Enter the rate per litre');
 
@@ -139,13 +142,16 @@ export default function LogFuelScreen() {
           <DateField label="Date" value={date} onChange={setDate} />
 
           <Select
-            label="Fuel Station"
+            label="Fuel station vendor *"
             value={stationId}
             onChange={setStationId}
             options={stations}
-            placeholder="Select station (optional)"
+            placeholder="Select fuel station"
             searchable
           />
+          <Pressable onPress={() => setAddStation(true)} hitSlop={8} accessibilityRole="button">
+            <Text style={{ color: st.info, fontSize: fontSize.sm, fontWeight: fontWeight.semibold }}>Not in the list? + Add fuel station</Text>
+          </Pressable>
 
           <View>
             <Text style={[styles.label, { color: c.textSecondary }]}>Fuel Type</Text>
@@ -205,6 +211,15 @@ export default function LogFuelScreen() {
           </Button>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <FuelStationQuickAdd
+        open={addStation}
+        onClose={() => setAddStation(false)}
+        onSaved={(s) => {
+          setStations((list) => [...list, { value: s.id, label: `${s.name} · ${s.vendorCode}` }]);
+          setStationId(s.id);
+        }}
+      />
     </View>
   );
 }

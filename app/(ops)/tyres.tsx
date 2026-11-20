@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { fontSize, fontWeight, radius, spacing, useColors } from '@/theme';
+import { fontSize, fontWeight, radius, spacing, status as st, useColors } from '@/theme';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { OpsListScaffold } from '@/components/ops/OpsListScaffold';
 import { OpsModal } from '@/components/ops/OpsModal';
+import { VendorFormModal } from '@/components/ops/VendorFormModal';
 import { useOpsList } from '@/hooks/useOpsList';
 import { showToast } from '@/store/toast.store';
 import { errMessage } from '@/api/client';
@@ -45,7 +46,7 @@ const health = (p: number) => (p >= 50 ? '#16A34A' : p >= 20 ? '#D97706' : '#DC2
 
 const EMPTY = {
   vehicleId: '', serial: '', position: 'FL', odo: '',
-  brand: '', removalReason: 'Puncture', nextStatus: 'in_use' as TyreStatus,
+  brand: '', vendorId: '', removalReason: 'Puncture', nextStatus: 'in_use' as TyreStatus,
 };
 
 export default function OpsTyres() {
@@ -56,8 +57,13 @@ export default function OpsTyres() {
   const [busy, setBusy] = useState(false);
   const [vehicles, setVehicles] = useState<SelectOption[]>([]);
   const [form, setForm] = useState(EMPTY);
+  const [tyreVendors, setTyreVendors] = useState<SelectOption[]>([]);
+  const [vendorForm, setVendorForm] = useState(false);
 
-  useEffect(() => { ops.getVehicleOptions().then(setVehicles).catch(() => undefined); }, []);
+  useEffect(() => {
+    ops.getVehicleOptions().then(setVehicles).catch(() => undefined);
+    ops.getVendorOptionsByType('tyre_hub').then(setTyreVendors).catch(() => undefined);
+  }, []);
 
   const openLog = () => { setDir('in'); setForm({ ...EMPTY, nextStatus: 'in_use' }); setOpen(true); };
   const switchDir = (d: TyreMovementDirection) => {
@@ -68,6 +74,9 @@ export default function OpsTyres() {
   const submit = useCallback(async () => {
     if (!form.vehicleId) return showToast({ type: 'error', message: 'Select a vehicle' });
     if (!form.serial.trim()) return showToast({ type: 'error', message: 'Enter the tyre serial number' });
+    // a tyre we have not seen before must say which tyre hub vendor it came from
+    const known = items.some((t) => t.serialNumber.trim().toLowerCase() === form.serial.trim().toLowerCase());
+    if (dir === 'in' && !known && !form.vendorId) return showToast({ type: 'error', message: 'Select the tyre hub vendor for this new tyre (or add it)' });
     setBusy(true);
     try {
       await ops.tyreMovementLog({
@@ -77,14 +86,14 @@ export default function OpsTyres() {
         position: form.position,
         odometerKm: form.odo ? Number(form.odo) : 0,
         ...(dir === 'in'
-          ? { brand: form.brand.trim() || null, nextStatus: 'in_use' }
+          ? { brand: form.brand.trim() || null, vendorId: form.vendorId || null, nextStatus: 'in_use' }
           : { removalReason: form.removalReason, nextStatus: form.nextStatus }),
       });
       showToast({ type: 'success', message: dir === 'in' ? 'Tyre fitted' : 'Tyre removed' });
       setOpen(false); setForm(EMPTY); await reload();
     } catch (e) { showToast({ type: 'error', message: errMessage(e) }); }
     finally { setBusy(false); }
-  }, [dir, form, reload]);
+  }, [dir, form, items, reload]);
 
   const tabColor = dir === 'in' ? '#16A34A' : '#DC2626';
 
@@ -139,6 +148,10 @@ export default function OpsTyres() {
         {dir === 'in' ? (
           <>
             <Input label="Brand / Make" value={form.brand} onChangeText={(v) => setForm((f) => ({ ...f, brand: v }))} placeholder="e.g. MRF, CEAT" />
+            <Select value={form.vendorId || null} onChange={(v) => setForm((f) => ({ ...f, vendorId: v }))} options={tyreVendors} label="Tyre hub vendor * (needed for a new tyre)" placeholder="Select tyre hub vendor" searchable />
+            <Pressable onPress={() => setVendorForm(true)} hitSlop={8} accessibilityRole="button">
+              <Text style={{ color: st.info, fontSize: fontSize.sm, fontWeight: fontWeight.semibold }}>Not in the list? + New tyre hub vendor</Text>
+            </Pressable>
             <Select value={form.nextStatus} onChange={(v) => setForm((f) => ({ ...f, nextStatus: v as TyreStatus }))} options={NEXT_IN} label="Next Status" />
           </>
         ) : (
@@ -149,6 +162,16 @@ export default function OpsTyres() {
         )}
         <View style={{ height: 2, backgroundColor: tabColor, opacity: 0.25, borderRadius: 1 }} />
       </OpsModal>
+
+      <VendorFormModal
+        open={vendorForm}
+        fixedType="tyre_hub"
+        onClose={() => setVendorForm(false)}
+        onSaved={(v) => {
+          ops.getVendorOptionsByType('tyre_hub').then(setTyreVendors).catch(() => undefined);
+          setForm((f) => ({ ...f, vendorId: v.id }));
+        }}
+      />
     </OpsListScaffold>
   );
 }

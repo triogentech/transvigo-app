@@ -10,3 +10,15 @@ export async function getFuelLogs(params: { page?: number; pageSize?: number } =
   const res = await api.get<Paginated<FuelLog>>('/api/fuel-logs', { params });
   return res.data;
 }
+
+export interface FuelStationVendor {
+  id: string;
+  name: string;
+  vendorCode: string;
+}
+
+/** Adds a fuel station vendor (a code like FS-0007 is generated). */
+export async function createFuelStation(body: { name: string; contactNumber?: string | null }): Promise<FuelStationVendor> {
+  const res = await api.post<FuelStationVendor>('/api/fuel-stations', body);
+  return res.data;
+}
