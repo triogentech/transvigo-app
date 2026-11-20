@@ -98,7 +98,7 @@ export default function OpsTyres() {
               <Text style={{ color: STATUS[t.currentStatus].color, fontSize: fontSize.xs, fontWeight: fontWeight.semibold }}>{STATUS[t.currentStatus].label}</Text>
             </View>
           </View>
-          <Text style={[styles.meta, { color: c.textSecondary }]}>{t.brand} · {t.currentVehicle?.vehicleNumber ?? (t.currentPosition ?? 'unfitted')}</Text>
+          <Text style={[styles.meta, { color: c.textSecondary }]}>{t.brand} · {t.currentVehicle?.vehicleNumber ?? (t.currentPosition ?? 'unfitted')}{t.vendor ? ` · ${t.vendor.name} (${t.vendor.vendorCode})` : ''}</Text>
           <View style={[styles.bar, { backgroundColor: c.bgSunken }]}>
             <View style={{ width: `${Math.max(0, Math.min(100, t.healthPct))}%`, height: '100%', backgroundColor: health(t.healthPct) }} />
           </View>

@@ -10,7 +10,7 @@ import { errMessage } from '@/api/client';
 import * as ops from '@/api/ops.api';
 import { VENDOR_TYPES, type Vendor, type VendorType } from '@/types/vendors.types';
 
-const TYPE_COLOR: Record<VendorType, string> = { load_provider: '#2563EB', garage: '#7C3AED', spare_parts: '#16A34A' };
+const TYPE_COLOR: Record<VendorType, string> = { load_provider: '#2563EB', garage: '#7C3AED', spare_parts: '#16A34A', fuel_station: '#D97706', tyre_hub: '#DB2777' };
 
 /** All vendors in one place: load provider vendors, garages / workshops and spare parts vendors, each with its code. */
 export default function OpsVendors() {
@@ -46,7 +46,7 @@ export default function OpsVendors() {
       <View style={styles.chips}>
         {[{ value: null, label: 'All' } as { value: VendorType | null; label: string }, ...VENDOR_TYPES].map((t) => {
           const active = type === t.value;
-          const n = t.value ? counts?.[t.value] : counts ? counts.load_provider + counts.garage + counts.spare_parts : undefined;
+          const n = t.value ? counts?.[t.value] : counts ? Object.values(counts).reduce((a, b) => a + b, 0) : undefined;
           return (
             <Pressable key={t.label} onPress={() => setType(t.value)} style={[styles.chip, { borderColor: active ? st.info : c.border, backgroundColor: active ? `${st.info}22` : c.bgSurface }]}>
               <Text style={{ color: active ? st.info : c.textPrimary, fontSize: fontSize.xs, fontWeight: fontWeight.semibold }}>
