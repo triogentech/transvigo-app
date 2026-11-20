@@ -102,7 +102,9 @@ export default function OpsTyres() {
           <View style={[styles.bar, { backgroundColor: c.bgSunken }]}>
             <View style={{ width: `${Math.max(0, Math.min(100, t.healthPct))}%`, height: '100%', backgroundColor: health(t.healthPct) }} />
           </View>
-          <Text style={[styles.km, { color: c.textTertiary }]}>{t.healthPct}% · {t.totalKmRun.toLocaleString('en-IN')}/{t.expectedLifeKm.toLocaleString('en-IN')} km</Text>
+          <Text style={[styles.km, { color: c.textTertiary }]}>{t.healthPct}% · {t.totalKmRun.toLocaleString('en-IN')}/{t.expectedLifeKm.toLocaleString('en-IN')} km
+            {t.kmRunCurrentCycle ? ` · this fitting ${t.kmRunCurrentCycle.toLocaleString('en-IN')} km` : ''}
+            {t.kmRemaining !== undefined ? ` · ${t.kmRemaining.toLocaleString('en-IN')} km left` : ''}</Text>
         </Card>
       ))}
 

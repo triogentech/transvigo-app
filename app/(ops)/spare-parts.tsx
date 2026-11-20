@@ -6,16 +6,18 @@ import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { OpsListScaffold } from '@/components/ops/OpsListScaffold';
 import { OpsModal } from '@/components/ops/OpsModal';
+import { VendorFormModal } from '@/components/ops/VendorFormModal';
 import { useOpsList } from '@/hooks/useOpsList';
 import { showToast } from '@/store/toast.store';
 import { errMessage } from '@/api/client';
 import * as ops from '@/api/ops.api';
-import type { SelectOption } from '@/types/ops.types';
+import type { JobCard, PaymentMode, SelectOption } from '@/types/ops.types';
 
 const num = (v: string | number) => Number(v);
 type Line = { partName: string; qty: string; cost: string };
 const EMPTY_LINE: Line = { partName: '', qty: '', cost: '' };
-const EMPTY = { vehicleId: '', jobCardId: '', garageId: '', vendorId: '', notes: '' };
+const EMPTY = { vehicleId: '', jobCardId: '', garageId: '', vendorId: '', notes: '', paymentMode: 'credit' as PaymentMode };
+const MODE_OPTS: SelectOption[] = [{ value: 'cash', label: 'Cash' }, { value: 'credit', label: 'Credit' }];
 
 export default function OpsSpareParts() {
   const c = useColors();
@@ -25,16 +27,29 @@ export default function OpsSpareParts() {
   const [form, setForm] = useState(EMPTY);
   const [lines, setLines] = useState<Line[]>([{ ...EMPTY_LINE }]);
   const [vehicles, setVehicles] = useState<SelectOption[]>([]);
-  const [jobCards, setJobCards] = useState<SelectOption[]>([]);
+  const [openCards, setOpenCards] = useState<JobCard[] | null>(null);
+  const [vendorForm, setVendorForm] = useState(false);
   const [garages, setGarages] = useState<SelectOption[]>([]);
   const [vendors, setVendors] = useState<SelectOption[]>([]);
 
   useEffect(() => {
     ops.getVehicleOptions().then(setVehicles).catch(() => undefined);
-    ops.getJobCardOptions().then(setJobCards).catch(() => undefined);
-    ops.getGarageOptions().then(setGarages).catch(() => undefined);
-    ops.getVendorOptions().then(setVendors).catch(() => undefined);
+    ops.getVendorOptionsByType('garage').then(setGarages).catch(() => undefined);
+    ops.getVendorOptionsByType('spare_parts').then(setVendors).catch(() => undefined);
   }, []);
+
+  // Choosing a vehicle fetches its open job card(s): the newest is linked, and the slip's cost is added to it.
+  const pickVehicle = (vehicleId: string): void => {
+    setForm((f) => ({ ...f, vehicleId, jobCardId: '' }));
+    setOpenCards(null);
+    ops
+      .getOpenJobCards(vehicleId)
+      .then((cards) => {
+        setOpenCards(cards);
+        setForm((f) => (f.vehicleId === vehicleId ? { ...f, jobCardId: cards[0]?.id ?? '' } : f));
+      })
+      .catch(() => setOpenCards([]));
+  };
 
   const setLine = (i: number, k: keyof Line, v: string) =>
     setLines((ls) => ls.map((l, idx) => (idx === i ? { ...l, [k]: v } : l)));
@@ -43,7 +58,7 @@ export default function OpsSpareParts() {
 
   const total = lines.reduce((s, l) => s + (Number(l.qty) || 0) * (Number(l.cost) || 0), 0);
 
-  const reset = () => { setForm(EMPTY); setLines([{ ...EMPTY_LINE }]); };
+  const reset = () => { setForm(EMPTY); setLines([{ ...EMPTY_LINE }]); setOpenCards(null); };
 
   const submit = useCallback(async () => {
     if (!form.vehicleId) return showToast({ type: 'error', message: 'Select a vehicle' });
@@ -53,6 +68,7 @@ export default function OpsSpareParts() {
     try {
       const slip = await ops.createIssueSlip({
         vehicleId: form.vehicleId,
+        paymentMode: form.paymentMode,
         jobCardId: form.jobCardId || null,
         garageId: form.garageId || null,
         vendorId: form.vendorId || null,
@@ -71,7 +87,9 @@ export default function OpsSpareParts() {
         <Card key={s.id} style={styles.card}>
           <View style={styles.row}>
             <Text style={[styles.ref, { color: c.textPrimary }]}>{s.slipNumber}</Text>
-            <Text style={{ color: c.textSecondary, fontSize: fontSize.sm, fontWeight: fontWeight.semibold }}>₹{num(s.totalSlipValue).toLocaleString('en-IN')}</Text>
+            <Text style={{ color: c.textSecondary, fontSize: fontSize.sm, fontWeight: fontWeight.semibold }}>
+              {s.paymentMode === 'cash' ? 'Cash' : 'Credit'} · ₹{num(s.totalSlipValue).toLocaleString('en-IN')}
+            </Text>
           </View>
           <Text style={[styles.meta, { color: c.textSecondary }]}>
             {s.vehicle?.vehicleNumber ?? '—'}{s.jobCard ? ` · ${s.jobCard.jobCardNumber}` : ''}{s.garage ? ` · ${s.garage.name}` : ''} · {s.items?.length ?? 0} item(s)
@@ -83,10 +101,28 @@ export default function OpsSpareParts() {
       ))}
 
       <OpsModal open={open} onClose={() => setOpen(false)} title="New Issue Slip" onSubmit={submit} submitting={submitting} submitLabel="Create Slip">
-        <Select value={form.vehicleId || null} onChange={(v) => setForm((f) => ({ ...f, vehicleId: v }))} options={vehicles} label="Vehicle" placeholder="Select" searchable />
-        <Select value={form.jobCardId || null} onChange={(v) => setForm((f) => ({ ...f, jobCardId: v }))} options={jobCards} label="Job Card (optional)" placeholder="None" searchable />
-        <Select value={form.garageId || null} onChange={(v) => setForm((f) => ({ ...f, garageId: v }))} options={garages} label="Garage (optional)" placeholder="None" searchable />
-        <Select value={form.vendorId || null} onChange={(v) => setForm((f) => ({ ...f, vendorId: v }))} options={vendors} label="Vendor (optional)" placeholder="None" searchable />
+        <Select value={form.vehicleId || null} onChange={pickVehicle} options={vehicles} label="Vehicle" placeholder="Select" searchable />
+        {form.vehicleId ? (
+          openCards === null ? (
+            <Text style={{ color: c.textTertiary, fontSize: fontSize.sm }}>Finding the open job card…</Text>
+          ) : openCards.length === 0 ? (
+            <Text style={{ color: c.textSecondary, fontSize: fontSize.sm }}>No open job card for this vehicle. The slip is saved without one.</Text>
+          ) : (
+            <Select
+              value={form.jobCardId || null}
+              onChange={(v) => setForm((f) => ({ ...f, jobCardId: v }))}
+              options={openCards.map((j) => ({ value: j.id, label: `${j.jobCardNumber} · ${j.driverComplaint.slice(0, 40)}` }))}
+              label={openCards.length === 1 ? 'Job card (linked automatically)' : 'Job card (newest selected)'}
+              placeholder="None"
+            />
+          )
+        ) : null}
+        <Select value={form.paymentMode} onChange={(v) => setForm((f) => ({ ...f, paymentMode: v as PaymentMode }))} options={MODE_OPTS} label="Bought on" />
+        <Select value={form.garageId || null} onChange={(v) => setForm((f) => ({ ...f, garageId: v }))} options={garages} label="Garage / workshop (optional)" placeholder="None" searchable />
+        <Select value={form.vendorId || null} onChange={(v) => setForm((f) => ({ ...f, vendorId: v }))} options={vendors} label="Spare parts vendor (optional)" placeholder="None" searchable />
+        <Pressable onPress={() => setVendorForm(true)} hitSlop={8}>
+          <Text style={{ color: st.info, fontSize: fontSize.sm, fontWeight: fontWeight.semibold }}>+ New spare parts vendor</Text>
+        </Pressable>
 
         <View style={styles.partsHead}>
           <Text style={[styles.partsLabel, { color: c.textSecondary }]}>Parts</Text>
@@ -111,6 +147,16 @@ export default function OpsSpareParts() {
         <Text style={{ color: c.textTertiary, fontSize: fontSize.xs }}>Total: ₹{total.toLocaleString('en-IN')}</Text>
         <Input label="Notes (optional)" value={form.notes} onChangeText={(v) => setForm((f) => ({ ...f, notes: v }))} placeholder="Remarks" />
       </OpsModal>
+
+      <VendorFormModal
+        open={vendorForm}
+        fixedType="spare_parts"
+        onClose={() => setVendorForm(false)}
+        onSaved={(v) => {
+          ops.getVendorOptionsByType('spare_parts').then(setVendors).catch(() => undefined);
+          setForm((f) => ({ ...f, vendorId: v.id }));
+        }}
+      />
     </OpsListScaffold>
   );
 }

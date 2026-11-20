@@ -12,6 +12,7 @@ export interface JobCard {
   garage?: { id: string; name: string } | null;
   supervisor?: { id: string; username: string } | null;
   entryOdometer: number;
+  entryOdometerPhotoUrl?: string | null;
   totalJobCost: string | number;
   entryTime: string;
   priority?: Priority;
@@ -70,6 +71,9 @@ export interface Tyre {
   totalKmRun: number;
   expectedLifeKm: number;
   healthPct: number;
+  /** Live usage from the vehicle odometer (see the backend): km on the current fitting and km of life left. */
+  kmRunCurrentCycle?: number;
+  kmRemaining?: number;
 }
 export interface CreateTyreBody {
   serialNumber: string;
@@ -97,11 +101,19 @@ export interface TyreMovementLogBody {
 }
 
 export type InvoicePaymentStatus = 'on_credit' | 'fully_paid';
+export type PaymentMode = 'cash' | 'credit';
+
 export interface SupplierInvoice {
   id: string;
   refNumber: string;
   invoiceNumber: string;
   vendor?: { id: string; vendorName: string } | null;
+  /** The billing vendor (spare parts vendor or garage) with its code. */
+  supplier?: { id: string; type: 'spare_parts' | 'garage'; name: string; vendorCode: string } | null;
+  paymentMode?: PaymentMode;
+  billRaisedAmount?: number;
+  billPaidAmount?: number;
+  settlement?: 'paid' | 'pending';
   vehicle?: { id: string; vehicleNumber: string } | null;
   jobCard?: { id: string; jobCardNumber: string } | null;
   totalAmount: string | number;
@@ -116,6 +128,8 @@ export interface CreateInvoiceBody {
   vendorId?: string | null;
   totalAmount?: number;
   paymentStatus?: InvoicePaymentStatus;
+  paymentMode?: PaymentMode;
+  paidAmount?: number;
 }
 
 // ── Spare-part issue slip (free-text line items) ──
@@ -133,6 +147,7 @@ export interface SpareIssueSlip {
   jobCard?: { id: string; jobCardNumber: string } | null;
   vendor?: { id: string; vendorName: string } | null;
   garage?: { id: string; name: string } | null;
+  paymentMode?: PaymentMode;
   totalSlipValue: string | number;
   notes?: string | null;
   items: SpareIssueSlipItem[];
@@ -145,6 +160,7 @@ export interface CreateIssueSlipItemBody {
 }
 export interface CreateIssueSlipBody {
   vehicleId: string;
+  paymentMode?: PaymentMode;
   jobCardId?: string | null;
   vendorId?: string | null;
   garageId?: string | null;

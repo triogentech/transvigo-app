@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { fontSize, fontWeight, spacing, useColors } from '@/theme';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { Card } from '@/components/ui/Card';
+import { ZoomableImage } from '@/components/ui/ZoomableImage';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ErrorBanner } from '@/components/ui/ErrorBanner';
@@ -120,6 +121,12 @@ export default function OpsJobCardDetail() {
                 {card.driver ? ` · ${card.driver.fullName}` : ''} · {Number(card.entryOdometer).toLocaleString('en-IN')} km
               </Text>
               <Text style={{ color: c.textSecondary, fontSize: fontSize.sm }}>Created {formatDateTime(card.entryTime)}</Text>
+              {card.entryOdometerPhotoUrl ? (
+                <>
+                  <Text style={[styles.label, { color: c.textTertiary }]}>ODOMETER PHOTO</Text>
+                  <ZoomableImage uri={card.entryOdometerPhotoUrl} style={{ width: '100%', height: 180, borderRadius: 12 }} />
+                </>
+              ) : null}
               {card.acknowledgedAt ? (
                 <Text style={{ color: c.textSecondary, fontSize: fontSize.sm }}>Acknowledged {formatDateTime(card.acknowledgedAt)}</Text>
               ) : null}
