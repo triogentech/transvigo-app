@@ -65,6 +65,8 @@ export interface Tyre {
   serialNumber: string;
   brand: string;
   size: string;
+  /** The tyre hub vendor it was bought from. */
+  vendor?: { id: string; name: string; vendorCode: string } | null;
   currentStatus: TyreStatus;
   currentVehicle?: { id: string; vehicleNumber: string } | null;
   currentPosition?: string | null;
