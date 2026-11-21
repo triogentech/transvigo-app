@@ -16,6 +16,7 @@
     },
     "android": {
       "package": "com.transvigo.driver",
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#FFFFFF"
