@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "240338797018",
+    "project_id": "transvigo-163ab",
+    "storage_bucket": "transvigo-163ab.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:240338797018:android:f4cd9b6e84c9de3f85c0e3",
+        "android_client_info": {
+          "package_name": "com.transvigo.driver"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAGmd9ugq_dU9zIc3_PLsBDaTjw9I0eCew"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
