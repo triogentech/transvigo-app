@@ -9,6 +9,8 @@ import { brand, fontSize, fontWeight, radius, spacing, status as st, useColors }
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { DateTimeField } from '@/components/ui/DateTimeField';
+import { PhotoField } from '@/components/trip/PhotoField';
 import { ErrorBanner } from '@/components/ui/ErrorBanner';
 import * as tripsApi from '@/api/trips.api';
 import { errMessage, isNetworkError } from '@/api/client';
@@ -41,6 +43,9 @@ export default function TripCaptureScreen() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [odometer, setOdometer] = useState('');
   const [photoUri, setPhotoUri] = useState<string | null>(null);
+  // Closing only: when the trip closed, and the arrival report.
+  const [closingTime, setClosingTime] = useState(new Date());
+  const [arrivalUri, setArrivalUri] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [locationIssue, setLocationIssue] = useState<LocationIssue | null>(null);
@@ -74,6 +79,7 @@ export default function TripCaptureScreen() {
     if (!odometer.trim() || !Number.isInteger(km) || km < 0) return setError('Enter the odometer reading in whole kilometres');
     if (km < minimum) return setError(`The odometer can’t be lower than the last reading (${minimum.toLocaleString('en-IN')} km)`);
     if (!photoUri) return setError('Take a photo of the odometer');
+    if (!isStart && !arrivalUri) return setError('Attach the arrival report');
 
     setBusy(true);
     try {
@@ -90,9 +96,15 @@ export default function TripCaptureScreen() {
         throw e;
       }
       await tripsApi.uploadOdometerPhoto(trip.id, isStart ? 'start' : 'end', photoUri);
-      await tripsApi.updateTripStatus(trip.id, isStart ? 'in_transit' : 'completed', { odometer: km, ...coords });
+      if (!isStart && arrivalUri) await tripsApi.uploadAttachment(trip.id, 'arrival_report', arrivalUri);
+      await tripsApi.updateTripStatus(
+        trip.id,
+        isStart ? 'in_transit' : 'completed',
+        { odometer: km, ...coords },
+        isStart ? undefined : { actualEndTime: closingTime.toISOString() },
+      );
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      showToast({ type: 'success', message: isStart ? 'Trip started' : 'Trip completed' });
+      showToast({ type: 'success', message: isStart ? 'Trip started' : 'Trip closed. The office will check and approve it.' });
       void useUpdateStore.getState().refreshActiveTrip(); // lets a pending mandatory update take over
       // Drivers can't open past trips: after completing, go Home.
       if (isStart) router.back();
@@ -154,6 +166,18 @@ export default function TripCaptureScreen() {
                 </Pressable>
               )}
             </View>
+
+            {!isStart ? (
+              <>
+                <DateTimeField
+                  label="Closing time"
+                  value={closingTime}
+                  onChange={setClosingTime}
+                  minimumDate={trip.actualStartTime ? new Date(trip.actualStartTime) : undefined}
+                />
+                <PhotoField label="Arrival report" uri={arrivalUri} onChange={setArrivalUri} allowGallery />
+              </>
+            ) : null}
 
             <View style={styles.locRow}>
               <Ionicons name="location-outline" size={18} color={c.textTertiary} />

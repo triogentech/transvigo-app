@@ -9,6 +9,7 @@ import type {
 
 export interface TripsPage {
   trips: Trip[];
+  awaitingClosure?: AwaitingClosure | null;
   meta: { page: number; pageSize: number; total: number; totalPages: number };
 }
 
@@ -46,13 +47,16 @@ export interface TripCapture {
   longitude: number;
 }
 
+/** Closing also sends when the trip closed (defaults to now). */
+export interface CloseExtras { actualEndTime?: string }
+
 /** Driver actions: created → in_transit (start), in_transit → completed.
  *  Uses the driver-scoped endpoint (ownership + forward-only checked server-side;
  *  repeating the same transition is a safe no-op). Wire values are hyphenated.
  *  Newer app builds send the odometer + GPS capture (the photo is uploaded first). */
-export async function updateTripStatus(id: string, status: TripStatus, capture?: TripCapture): Promise<Trip> {
+export async function updateTripStatus(id: string, status: TripStatus, capture?: TripCapture, extras?: CloseExtras): Promise<Trip> {
   const wire = status === 'in_transit' ? 'in-transit' : status;
-  const res = await api.patch<Trip>(`/api/driver/trips/${id}/status`, { status: wire, ...capture });
+  const res = await api.patch<Trip>(`/api/driver/trips/${id}/status`, { status: wire, ...capture, ...extras });
   return res.data;
 }
 
@@ -77,4 +81,58 @@ export async function uploadOdometerPhoto(id: string, stage: CaptureStage, uri: 
 /** Tells the back office this driver's location is off/denied and the trip is blocked. */
 export async function reportLocationDenied(id: string, stage: CaptureStage): Promise<void> {
   await api.post(`/api/driver/trips/${id}/location-denied`, { stage });
+}
+
+// ── Driver-created trips, touching points, attachments ──
+
+export interface NewTripBody {
+  tripNumber: string;
+  dispatchTime: string; // ISO
+  startPoint: string;
+  endPoint: string;
+  tatHours: number;
+  startOdometer: number;
+  vehicleId?: string;
+}
+
+/** The driver creates a trip after leaving: it runs at once and waits for the office to approve it.
+ *  Sending the same trip number again (a retry) returns the same trip. */
+export async function createDriverTrip(body: NewTripBody): Promise<Trip> {
+  const res = await api.post<Trip>('/api/driver/trips', body);
+  return res.data;
+}
+
+/** Reaching ('in') or leaving ('out') a touching point the office added to the trip. */
+export async function reportTouching(tripId: string, pointId: string, stage: 'in' | 'out', time?: Date): Promise<Trip> {
+  const res = await api.post<Trip>(`/api/driver/trips/${tripId}/touching/${pointId}`, { stage, time: time?.toISOString() });
+  return res.data;
+}
+
+export type AttachmentKind = 'start_odometer' | 'trip_sheet' | 'arrival_report';
+
+/** Uploads a photo for the trip: the start odometer, the trip sheet, or the arrival report. */
+export async function uploadAttachment(id: string, kind: AttachmentKind, uri: string): Promise<string> {
+  const form = new FormData();
+  if (Platform.OS === 'web') {
+    form.append('file', await (await fetch(uri)).blob(), `${kind}.jpg`);
+  } else {
+    form.append('file', { uri, name: `${kind}.jpg`, type: 'image/jpeg' } as unknown as Blob);
+  }
+  const res = await api.post<{ url: string }>(`/api/driver/trips/${id}/attachment`, form, {
+    params: { kind },
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return res.data.url;
+}
+
+/** A closed trip the office has not approved yet, or sent back (shown on the Trips tab). */
+export interface AwaitingClosure {
+  id: string;
+  tripNumber: string;
+  startPoint: string;
+  endPoint: string;
+  closeApproval: 'pending' | 'needs_changes';
+  approvalNote: string | null;
+  haltMinutes: number;
+  delayMinutes: number;
 }
