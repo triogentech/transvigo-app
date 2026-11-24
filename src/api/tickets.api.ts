@@ -1,5 +1,6 @@
 import { api } from './client';
 import type { CreateTicketBody, Paginated, Ticket, TicketStatus } from '@/types/api.types';
+import type { ThreadMessage } from '@/types/maintenance.types';
 
 export interface TicketsParams {
   page?: number;
@@ -16,6 +17,17 @@ export async function getTicketsPage(params: TicketsParams): Promise<Paginated<T
 export async function getTicket(id: string): Promise<Ticket> {
   const res = await api.get<Ticket>(`/api/tickets/${id}`);
   return res.data;
+}
+
+/** The conversation with the office on this ticket (oldest first). */
+export async function getTicketMessages(id: string): Promise<ThreadMessage[]> {
+  const res = await api.get<ThreadMessage[]>(`/api/tickets/${id}/messages`);
+  return res.data;
+}
+
+/** Reply to the office. A driver's reply never acknowledges the ticket; only the office's first message does. */
+export async function postTicketMessage(id: string, body: string): Promise<void> {
+  await api.post(`/api/tickets/${id}/messages`, { body });
 }
 
 export async function createTicket(body: CreateTicketBody): Promise<Ticket> {

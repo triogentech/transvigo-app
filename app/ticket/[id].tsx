@@ -1,6 +1,6 @@
 import { ZoomableImage } from '@/components/ui/ZoomableImage';
 import { useCallback, useEffect, useState } from 'react';
-import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { AppState, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -11,11 +11,16 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ErrorBanner } from '@/components/ui/ErrorBanner';
 import { TicketHistory } from '@/components/ticket/TicketHistory';
+import { MessageThread } from '@/components/maintenance/MessageThread';
+import { showToast } from '@/store/toast.store';
 import * as ticketsApi from '@/api/tickets.api';
 import { errMessage } from '@/api/client';
 import { getSlaElapsedFraction, getSlaStatus, formatSlaCountdown, SLA_HOURS } from '@/utils/sla';
 import { titleCase } from '@/utils/format';
 import type { Ticket } from '@/types/api.types';
+import type { ThreadMessage } from '@/types/maintenance.types';
+
+const POLL_MS = 20_000;
 
 export default function TicketDetailScreen() {
   const c = useColors();
@@ -25,13 +30,16 @@ export default function TicketDetailScreen() {
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [messages, setMessages] = useState<ThreadMessage[]>([]);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (silent = false) => {
     if (!id) return;
-    setLoading(true);
+    if (!silent) setLoading(true);
     setError(null);
     try {
-      setTicket(await ticketsApi.getTicket(id));
+      const [t, m] = await Promise.all([ticketsApi.getTicket(id), ticketsApi.getTicketMessages(id).catch(() => null)]);
+      setTicket(t);
+      if (m) setMessages(m);
     } catch (e) {
       setError(errMessage(e));
     } finally {
@@ -42,6 +50,25 @@ export default function TicketDetailScreen() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Replies normally arrive by push; poll while the screen is open as a fallback (same as a maintenance report).
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (AppState.currentState === 'active') void load(true);
+    }, POLL_MS);
+    return () => clearInterval(timer);
+  }, [load]);
+
+  const send = async (body: string): Promise<void> => {
+    if (!id) return;
+    try {
+      await ticketsApi.postTicketMessage(id, body);
+      await load(true);
+    } catch (e) {
+      showToast({ type: 'error', message: errMessage(e, 'Could not send the message') });
+      throw e;
+    }
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: c.bgPage }}>
@@ -54,10 +81,11 @@ export default function TicketDetailScreen() {
         </View>
       ) : error || !ticket ? (
         <View style={styles.content}>
-          <ErrorBanner message={error ?? 'Ticket not found'} onRetry={load} />
+          <ErrorBanner message={error ?? 'Ticket not found'} onRetry={() => void load()} />
         </View>
       ) : (
-        <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + spacing.xxl }]}>
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + spacing.xxl }]} keyboardShouldPersistTaps="handled">
           <Card style={styles.gap}>
             <View style={styles.badgeRow}>
               <StatusBadge status={ticket.priority} variant="priority" />
@@ -91,11 +119,20 @@ export default function TicketDetailScreen() {
 
           {ticket.assignedToUser ? <AssigneeCard assignee={ticket.assignedToUser} /> : null}
 
+          <Text style={[styles.fieldLabel, { color: c.textTertiary, letterSpacing: 0.8, marginTop: spacing.sm }]}>CONVERSATION</Text>
+          <MessageThread
+            messages={messages}
+            viewer="driver"
+            closedNote={ticket.status === 'resolved' || ticket.status === 'closed' ? 'This ticket is resolved. Raise a new report if the problem comes back.' : undefined}
+            onSend={send}
+          />
+
           <Card>
             <Text style={[styles.sectionTitle, { color: c.textPrimary }]}>Ticket Journey</Text>
             <TicketHistory entries={ticket.history ?? []} />
           </Card>
         </ScrollView>
+        </KeyboardAvoidingView>
       )}
     </View>
   );
