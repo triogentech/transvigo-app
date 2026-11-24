@@ -77,6 +77,13 @@ export interface TouchingLocation {
   sequence: number;
   inTime?: string | null;
   outTime?: string | null;
+  /** Captured by the driver when reaching ('in') and leaving ('out'). */
+  inLatitude?: number | null;
+  inLongitude?: number | null;
+  outLatitude?: number | null;
+  outLongitude?: number | null;
+  inSheetPhotoUrl?: string | null;
+  outSheetPhotoUrl?: string | null;
 }
 
 export interface Transaction {

@@ -3,7 +3,7 @@
     "name": "TransVigo",
     "slug": "transvigo-driver",
     "scheme": "transvigo-driver",
-    "version": "1.2.0",
+    "version": "1.3.0",
     "orientation": "default",
     "userInterfaceStyle": "automatic",
     "icon": "./assets/images/icon.png",
