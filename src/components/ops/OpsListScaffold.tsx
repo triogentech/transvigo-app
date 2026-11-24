@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { brand, fontSize, fontWeight, spacing, useColors } from '@/theme';
 
 export function OpsListScaffold({
-  title, loading, error, empty, onRefresh, onAdd, children,
+  title, loading, error, empty, onRefresh, onAdd, emptyText = 'Nothing here yet.', children,
 }: {
   title: string;
   loading: boolean;
@@ -13,6 +13,8 @@ export function OpsListScaffold({
   empty: boolean;
   onRefresh: () => void;
   onAdd?: () => void;
+  /** Shown when the list is empty. */
+  emptyText?: string;
   children: ReactNode;
 }) {
   const c = useColors();
@@ -33,7 +35,7 @@ export function OpsListScaffold({
       >
         {error ? <Text style={{ color: c.danger, fontSize: fontSize.sm }}>{error}</Text> : null}
         {!loading && empty && !error ? (
-          <Text style={{ color: c.textTertiary, textAlign: 'center', marginTop: spacing.xxl }}>Nothing here yet.</Text>
+          <Text style={{ color: c.textTertiary, textAlign: 'center', marginTop: spacing.xxl }}>{emptyText}</Text>
         ) : null}
         {children}
       </ScrollView>

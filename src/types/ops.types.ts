@@ -28,6 +28,8 @@ export interface CreateJobCardBody {
   driverComplaint: string;
   entryOdometer?: number;
   garageId?: string | null;
+  /** Who handles it. Left out, the office's rotation picks someone. */
+  supervisorId?: string;
 }
 
 export interface SparePart {

@@ -9,13 +9,14 @@ import type {
   StockAdjustmentBody, SupplierInvoice, Tyre, TyreMovementLogBody,
 } from '@/types/ops.types';
 
-const list = async <T>(path: string): Promise<T[]> => {
-  const res = await api.get<Paginated<T>>(path, { params: { page: 1, pageSize: 100 } });
+const list = async <T>(path: string, extra?: Record<string, string>): Promise<T[]> => {
+  const res = await api.get<Paginated<T>>(path, { params: { page: 1, pageSize: 100, ...extra } });
   return res.data.data;
 };
 
 // ── Job Cards ──
-export const getJobCards = () => list<JobCard>('/api/job-cards');
+/** supervisorId: only the job cards handled by that person. */
+export const getJobCards = (supervisorId?: string) => list<JobCard>('/api/job-cards', supervisorId ? { supervisorId } : undefined);
 export const createJobCard = (body: CreateJobCardBody) => api.post<JobCard>('/api/job-cards', body).then((r) => r.data);
 export const setJobCardStatus = (id: string, status: JobCardStatus) =>
   api.put<JobCard>(`/api/job-cards/${id}/status`, { status }).then((r) => r.data);

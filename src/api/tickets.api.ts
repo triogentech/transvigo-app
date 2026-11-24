@@ -7,6 +7,8 @@ export interface TicketsParams {
   pageSize?: number;
   status?: TicketStatus;
   priority?: 'critical' | 'high' | 'medium' | 'low';
+  /** Only the tickets assigned to this person. */
+  assignedTo?: string;
 }
 
 export async function getTicketsPage(params: TicketsParams): Promise<Paginated<Ticket>> {
