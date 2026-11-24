@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter, useSegments } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { brand, fontSize, fontWeight, spacing, useColors } from '@/theme';
 
@@ -19,10 +20,17 @@ export function OpsListScaffold({
 }) {
   const c = useColors();
   const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const canGoBack = (useSegments() as string[])[0] === '(ops-more)'; // Hub modules are pushed screens, so they get a back arrow
   return (
     <View style={{ flex: 1, backgroundColor: c.bgPage }}>
       <View style={[styles.header, { paddingTop: insets.top + spacing.sm, backgroundColor: c.bgSurface, borderBottomColor: c.border }]}>
-        <Text style={[styles.title, { color: c.textPrimary }]}>{title}</Text>
+        {canGoBack ? (
+          <Pressable onPress={() => router.back()} hitSlop={10}>
+            <Ionicons name="chevron-back" size={26} color={c.textPrimary} />
+          </Pressable>
+        ) : null}
+        <Text style={[styles.title, { color: c.textPrimary, flex: 1 }]}>{title}</Text>
         {onAdd ? (
           <Pressable onPress={onAdd} hitSlop={10}>
             <Ionicons name="add-circle" size={28} color={brand.teal} />

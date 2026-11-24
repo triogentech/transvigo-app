@@ -14,13 +14,13 @@ type Tile = { label: string; icon: keyof typeof Ionicons.glyphMap; route: string
 const TILES: Tile[] = [
   { label: 'Tickets', icon: 'alert-circle-outline', route: '/(ops)/tickets', color: '#EA580C' },
   { label: 'Job Cards', icon: 'construct-outline', route: '/(ops)/job-cards', color: '#2563EB' },
-  { label: 'Spare Parts', icon: 'cube-outline', route: '/(ops)/spare-parts', color: '#16A34A' },
-  { label: 'Tyre Management', icon: 'ellipse-outline', route: '/(ops)/tyres', color: '#7C3AED' },
-  { label: 'Vendors', icon: 'business-outline', route: '/(ops)/vendors', color: '#DB2777' },
-  { label: 'Invoices', icon: 'receipt-outline', route: '/(ops)/invoices', color: '#0EA5C5' },
-  { label: 'Maintenance', icon: 'build-outline', route: '/(ops)/maintenance', color: '#D97706' },
-  { label: 'Trips', icon: 'map-outline', route: '/(ops)/trips', color: brand.navy },
-  { label: 'Analytics', icon: 'bar-chart-outline', route: '/(ops)/analytics', color: '#2563EB' },
+  { label: 'Spare Parts', icon: 'cube-outline', route: '/(ops-more)/spare-parts', color: '#16A34A' },
+  { label: 'Tyre Management', icon: 'ellipse-outline', route: '/(ops-more)/tyres', color: '#7C3AED' },
+  { label: 'Vendors', icon: 'business-outline', route: '/(ops-more)/vendors', color: '#DB2777' },
+  { label: 'Invoices', icon: 'receipt-outline', route: '/(ops-more)/invoices', color: '#0EA5C5' },
+  { label: 'Maintenance', icon: 'build-outline', route: '/(ops-more)/maintenance', color: '#D97706' },
+  { label: 'Trips', icon: 'map-outline', route: '/(ops-more)/trips', color: brand.navy },
+  { label: 'Analytics', icon: 'bar-chart-outline', route: '/(ops-more)/analytics', color: '#2563EB' },
 ];
 
 export default function OpsHub() {
