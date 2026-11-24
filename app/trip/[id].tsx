@@ -13,6 +13,7 @@ import { ErrorBanner } from '@/components/ui/ErrorBanner';
 import { ZoomableImage } from '@/components/ui/ZoomableImage';
 import { TripStatusStepper } from '@/components/trip/TripStatusStepper';
 import { TripExpenses } from '@/components/trip/TripExpenses';
+import { ApprovalBanner, MissingPhotos, TouchingPoints } from '@/components/trip/TripFlowSections';
 import * as tripsApi from '@/api/trips.api';
 import { errMessage } from '@/api/client';
 import { showToast } from '@/store/toast.store';
@@ -117,9 +118,14 @@ export default function TripDetailScreen() {
             </View>
           </Card>
 
+          <ApprovalBanner trip={trip} />
+
           <Card>
             <TripStatusStepper status={trip.currentStatus} />
           </Card>
+
+          <MissingPhotos trip={trip} onDone={() => void load(true)} />
+          <TouchingPoints trip={trip} onChanged={() => void load(true)} />
 
           {nextStatus ? (
             <Button

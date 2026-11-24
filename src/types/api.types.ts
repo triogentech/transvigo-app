@@ -69,10 +69,14 @@ export interface LoadProviderRef {
   name: string;
 }
 
+export type ApprovalState = 'approved' | 'pending' | 'needs_changes';
+
 export interface TouchingLocation {
   id: string;
   name: string | null;
   sequence: number;
+  inTime?: string | null;
+  outTime?: string | null;
 }
 
 export interface Transaction {
@@ -125,6 +129,16 @@ export interface Trip {
   endOdometer?: number | null;
   endOdometerPhotoUrl?: string | null;
   vendorName?: string | null;
+  /** Created / closed by the driver: operations approve it ('pending' until they do; 'needs_changes' = sent back with a note). */
+  createdByDriver?: boolean;
+  startApproval?: ApprovalState;
+  closeApproval?: ApprovalState;
+  approvalNote?: string | null;
+  tripSheetPhotoUrl?: string | null;
+  arrivalReportUrl?: string | null;
+  /** Minutes at touching points / minutes over the TAT after halts (money is never sent to drivers). */
+  haltMinutes?: number;
+  delayMinutes?: number;
   isTouchingLocationAvailable: boolean;
   totalTripDistanceKm?: number;
   totalTripTimeMinutes?: number;

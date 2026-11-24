@@ -110,7 +110,7 @@ function RecentTicketRow({ ticket, onPress }: { ticket: Ticket; onPress: () => v
   );
 }
 
-function EmptyTripCard({ onCheck, loading }: { onCheck: () => void; loading: boolean }) {
+function EmptyTripCard({ onCheck, onCreate, loading }: { onCheck: () => void; onCreate: () => void; loading: boolean }) {
   const c = useColors();
   return (
     <View style={[styles.emptyCard, { backgroundColor: c.bgCard, borderColor: c.border }]}>
@@ -123,6 +123,9 @@ function EmptyTripCard({ onCheck, loading }: { onCheck: () => void; loading: boo
       </Text>
       <Button variant="primary" size="lg" fullWidth loading={loading} onPress={onCheck}>
         Check for Assignments
+      </Button>
+      <Button variant="secondary" size="lg" fullWidth leftIcon="add-circle" onPress={onCreate}>
+        Create trip (already left)
       </Button>
     </View>
   );
@@ -217,7 +220,7 @@ export default function HomeScreen() {
             onPress={() => router.push(`/trip/${activeTrip.id}`)}
           />
         ) : (
-          <EmptyTripCard onCheck={onCheckAssignments} loading={checking} />
+          <EmptyTripCard onCheck={onCheckAssignments} onCreate={() => router.push('/trip/new')} loading={checking} />
         )}
 
         {/* Lifetime trips completed */}
