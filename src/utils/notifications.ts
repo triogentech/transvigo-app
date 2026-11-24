@@ -95,7 +95,7 @@ export async function unregisterPushNotifications(): Promise<void> {
 export function routeForNotification(data: Record<string, unknown> | undefined): string | null {
   if (!data) return null;
   const type = data.type;
-  if ((type === 'TICKET_STATUS_UPDATED' || type === 'TICKET_SLA_WARNING') && data.ticketId) {
+  if ((type === 'TICKET_STATUS_UPDATED' || type === 'TICKET_SLA_WARNING' || type === 'TICKET_MESSAGE') && data.ticketId) {
     return `/ticket/${String(data.ticketId)}`;
   }
   if (type === 'TRIP_ASSIGNED' && data.tripId) {
