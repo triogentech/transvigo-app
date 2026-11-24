@@ -103,9 +103,24 @@ export async function createDriverTrip(body: NewTripBody): Promise<Trip> {
 }
 
 /** Reaching ('in') or leaving ('out') a touching point the office added to the trip. */
-export async function reportTouching(tripId: string, pointId: string, stage: 'in' | 'out', time?: Date): Promise<Trip> {
-  const res = await api.post<Trip>(`/api/driver/trips/${tripId}/touching/${pointId}`, { stage, time: time?.toISOString() });
+export async function reportTouching(tripId: string, pointId: string, stage: 'in' | 'out', time?: Date, coords?: { latitude: number; longitude: number }): Promise<Trip> {
+  const res = await api.post<Trip>(`/api/driver/trips/${tripId}/touching/${pointId}`, { stage, time: time?.toISOString(), ...coords });
   return res.data;
+}
+
+/** The photo of the stamped trip sheet at a touching point (for reaching or leaving). Upload it before the report. */
+export async function uploadTouchingPhoto(tripId: string, pointId: string, stage: 'in' | 'out', uri: string): Promise<string> {
+  const form = new FormData();
+  if (Platform.OS === 'web') {
+    form.append('file', await (await fetch(uri)).blob(), `sheet-${stage}.jpg`);
+  } else {
+    form.append('file', { uri, name: `sheet-${stage}.jpg`, type: 'image/jpeg' } as unknown as Blob);
+  }
+  const res = await api.post<{ url: string }>(`/api/driver/trips/${tripId}/touching/${pointId}/photo`, form, {
+    params: { stage },
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return res.data.url;
 }
 
 export type AttachmentKind = 'start_odometer' | 'trip_sheet' | 'arrival_report';
