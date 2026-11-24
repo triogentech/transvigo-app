@@ -43,7 +43,7 @@ function useAuthGate(): void {
     } else if (isAuthenticated && !inAuthGroup) {
       // Keep each role in its own group (driver tabs vs ops tabs).
       if (ops && seg[0] === '(tabs)') router.replace('/(ops)');
-      else if (!ops && seg[0] === '(ops)') router.replace('/(tabs)');
+      else if (!ops && (seg[0] === '(ops)' || seg[0] === '(ops-more)')) router.replace('/(tabs)');
     }
   }, [isAuthenticated, isLoading, role, segments, router]);
 }

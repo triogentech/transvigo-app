@@ -50,14 +50,6 @@ export default function OpsTabsLayout() {
           ),
         }}
       />
-      {/* Reachable from the Hub, hidden from the tab bar */}
-      <Tabs.Screen name="spare-parts" options={{ href: null }} />
-      <Tabs.Screen name="tyres" options={{ href: null }} />
-      <Tabs.Screen name="invoices" options={{ href: null }} />
-      <Tabs.Screen name="vendors" options={{ href: null }} />
-      <Tabs.Screen name="maintenance" options={{ href: null }} />
-      <Tabs.Screen name="trips" options={{ href: null }} />
-      <Tabs.Screen name="analytics" options={{ href: null }} />
     </Tabs>
   );
 }
