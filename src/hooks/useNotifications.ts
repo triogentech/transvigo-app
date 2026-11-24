@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/auth.store';
@@ -25,8 +26,8 @@ export function useNotifications(): void {
       if (path) router.push(path);
     });
 
-    // Handle a tap that cold-started the app.
-    void Notifications.getLastNotificationResponseAsync().then((response) => {
+    // Handle a tap that cold-started the app. (Not available in the browser preview: it would throw there.)
+    if (Platform.OS !== 'web') void Notifications.getLastNotificationResponseAsync().then((response) => {
       if (!response) return;
       const data = response.notification.request.content.data as Record<string, unknown> | undefined;
       const path = routeForNotification(data);
