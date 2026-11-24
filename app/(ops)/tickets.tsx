@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/Card';
 import { Select } from '@/components/ui/Select';
 import { OpsListScaffold } from '@/components/ops/OpsListScaffold';
 import { useOpsList } from '@/hooks/useOpsList';
+import { useMyWorkScope } from '@/hooks/useMyWorkScope';
 import { showToast } from '@/store/toast.store';
 import { errMessage, api } from '@/api/client';
 import * as ops from '@/api/ops.api';
@@ -22,13 +23,14 @@ const STATUS: Record<TicketStatus, { label: string; color: string }> = {
 const STATUS_OPTS: SelectOption[] = (Object.keys(STATUS) as TicketStatus[]).map((s) => ({ value: s, label: STATUS[s].label }));
 const PRIORITY_COLOR: Record<string, string> = { critical: '#DC2626', high: '#EA580C', medium: '#D97706', low: '#9CA3AF' };
 
-const fetchTickets = async (): Promise<Ticket[]> => {
-  const res = await api.get<Paginated<Ticket>>('/api/tickets', { params: { page: 1, pageSize: 100 } });
-  return res.data.data;
-};
-
 export default function OpsTickets() {
   const c = useColors();
+  // Operations see only the tickets assigned to them; Admin / Staff see all.
+  const { onlyMine, userId } = useMyWorkScope();
+  const fetchTickets = useCallback(async (): Promise<Ticket[]> => {
+    const res = await api.get<Paginated<Ticket>>('/api/tickets', { params: { page: 1, pageSize: 100, ...(onlyMine && userId ? { assignedTo: userId } : {}) } });
+    return res.data.data;
+  }, [onlyMine, userId]);
   const { items, loading, error, reload } = useOpsList(fetchTickets);
   const [assignees, setAssignees] = useState<SelectOption[]>([]);
 
@@ -53,7 +55,14 @@ export default function OpsTickets() {
   }, [reload]);
 
   return (
-    <OpsListScaffold title="Tickets" loading={loading} error={error} empty={items.length === 0} onRefresh={reload}>
+    <OpsListScaffold
+      title={onlyMine ? 'My Tickets' : 'Tickets'}
+      loading={loading}
+      error={error}
+      empty={items.length === 0}
+      onRefresh={reload}
+      emptyText={onlyMine ? 'No tickets are assigned to you right now.' : undefined}
+    >
       {items.map((t) => (
         <Card key={t.id} style={styles.card} accentColor={PRIORITY_COLOR[t.priority] ?? '#9CA3AF'}>
           <View style={styles.row}>

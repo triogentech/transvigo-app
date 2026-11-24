@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { brand, fontSize, fontWeight, radius, spacing, status as st, useColors } from '@/theme';
 import { Card } from '@/components/ui/Card';
 import { useAuthStore } from '@/store/auth.store';
+import { useMyWorkScope } from '@/hooks/useMyWorkScope';
 import * as ticketsApi from '@/api/tickets.api';
 import * as ops from '@/api/ops.api';
 
@@ -33,11 +34,12 @@ export default function OpsHub() {
   // This screen can mount briefly for a Driver before the auth gate redirects to their tabs;
   // only fetch ops data for ops roles (Drivers get a 403 on /api/invoices).
   const isOps = !!user && user.role !== 'Driver';
+  const { onlyMine, userId } = useMyWorkScope();
   useEffect(() => {
     if (!isOps) return;
-    ticketsApi.getTicketsPage({ status: 'open', pageSize: 1 }).then((r) => setOpenTickets(r.pagination.total)).catch(() => undefined);
+    ticketsApi.getTicketsPage({ status: 'open', pageSize: 1, ...(onlyMine && userId ? { assignedTo: userId } : {}) }).then((r) => setOpenTickets(r.pagination.total)).catch(() => undefined);
     ops.getInvoices().then((rows) => setOnCredit(rows.filter((i) => i.paymentStatus === 'on_credit').length)).catch(() => undefined);
-  }, [isOps]);
+  }, [isOps, onlyMine, userId]);
 
   return (
     <ScrollView
@@ -57,7 +59,7 @@ export default function OpsHub() {
       <View style={styles.stats}>
         <Card style={styles.stat}>
           <Text style={[styles.statNum, { color: openTickets ? st.danger : c.textPrimary }]}>{openTickets ?? '—'}</Text>
-          <Text style={[styles.statLabel, { color: c.textSecondary }]}>Open Tickets</Text>
+          <Text style={[styles.statLabel, { color: c.textSecondary }]}>{onlyMine ? 'My Open Tickets' : 'Open Tickets'}</Text>
         </Card>
         <Card style={styles.stat}>
           <Text style={[styles.statNum, { color: onCredit ? st.warning : c.textPrimary }]}>{onCredit ?? '—'}</Text>

@@ -10,6 +10,7 @@ import { ReportMeta } from '@/components/maintenance/ReportMeta';
 import { OpsListScaffold } from '@/components/ops/OpsListScaffold';
 import { OpsModal } from '@/components/ops/OpsModal';
 import { useOpsList } from '@/hooks/useOpsList';
+import { useMyWorkScope } from '@/hooks/useMyWorkScope';
 import { showToast } from '@/store/toast.store';
 import { errMessage } from '@/api/client';
 import * as ops from '@/api/ops.api';
@@ -28,7 +29,10 @@ const STATUS_OPTS: SelectOption[] = (Object.keys(STATUS) as JobCardStatus[]).map
 export default function OpsJobCards() {
   const c = useColors();
   const router = useRouter();
-  const { items, loading, error, reload } = useOpsList(ops.getJobCards);
+  // Operations see only the job cards assigned to them; Admin / Staff see all.
+  const { onlyMine, userId } = useMyWorkScope();
+  const fetchJobCards = useCallback(() => ops.getJobCards(onlyMine && userId ? userId : undefined), [onlyMine, userId]);
+  const { items, loading, error, reload } = useOpsList(fetchJobCards);
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [vehicles, setVehicles] = useState<SelectOption[]>([]);
@@ -56,7 +60,8 @@ export default function OpsJobCards() {
     if (!form.complaint.trim()) return showToast({ type: 'error', message: 'Enter the complaint' });
     setSubmitting(true);
     try {
-      await ops.createJobCard({ vehicleId: form.vehicleId, driverComplaint: form.complaint.trim(), entryOdometer: form.odo ? Number(form.odo) : 0, garageId: form.garageId || null });
+      // A job card an Operations user creates is theirs (otherwise the rotation could hand it to someone else and it would vanish from their list).
+      await ops.createJobCard({ vehicleId: form.vehicleId, driverComplaint: form.complaint.trim(), entryOdometer: form.odo ? Number(form.odo) : 0, garageId: form.garageId || null, ...(onlyMine && userId ? { supervisorId: userId } : {}) });
       showToast({ type: 'success', message: 'Job card created' });
       setOpen(false);
       setForm({ vehicleId: '', complaint: '', odo: '', garageId: '' });
@@ -66,7 +71,7 @@ export default function OpsJobCards() {
     } finally {
       setSubmitting(false);
     }
-  }, [form, reload]);
+  }, [form, reload, onlyMine, userId]);
 
   const changeStatus = async (id: string, s: JobCardStatus) => {
     try {
@@ -78,7 +83,15 @@ export default function OpsJobCards() {
   };
 
   return (
-    <OpsListScaffold title="Job Cards" loading={loading} error={error} empty={items.length === 0} onRefresh={reload} onAdd={() => setOpen(true)}>
+    <OpsListScaffold
+      title={onlyMine ? 'My Job Cards' : 'Job Cards'}
+      loading={loading}
+      error={error}
+      empty={items.length === 0}
+      onRefresh={reload}
+      onAdd={() => setOpen(true)}
+      emptyText={onlyMine ? 'No job cards are assigned to you right now.' : undefined}
+    >
       {items.map((jc) => (
         <Card key={jc.id} style={styles.card}>
           <Pressable onPress={() => router.push(`/job-card/${jc.id}`)} style={{ gap: spacing.xs }}>
