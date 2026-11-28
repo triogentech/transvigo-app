@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/Card';
 import { AppearanceSelector } from '@/components/AppearanceSelector';
 import { confirmAction } from '@/utils/confirm';
 import { usePushStatusView } from '@/hooks/usePushStatusView';
+import { useUpdateAvailable } from '@/hooks/useUpdateAvailable';
 import { useAuthStore } from '@/store/auth.store';
 import { initialsOf } from '@/utils/format';
 
@@ -19,6 +20,7 @@ export default function OpsProfile() {
   const logout = useAuthStore((s) => s.logout);
   const push = usePushStatusView();
   const version = Constants.expoConfig?.version ?? '1.0.0';
+  const update = useUpdateAvailable();
 
   const confirmSignOut = () => {
     confirmAction('Sign out', 'Are you sure you want to sign out?', 'Sign Out', () => void logout());
@@ -41,7 +43,14 @@ export default function OpsProfile() {
       <Card style={{ padding: 0 }}>
         <Row icon="key-outline" label="Change Password" onPress={() => router.push('/(auth)/change-password')} />
         <Row icon="notifications-outline" label="Notifications" onPress={push.onPress} right={<Text style={{ color: push.color, fontSize: fontSize.sm }}>{push.text}</Text>} />
-        <Row icon="information-circle-outline" label="App Version" right={<Text style={{ color: c.textTertiary, fontSize: fontSize.sm }}>{version}</Text>} />
+        <Row
+          icon="information-circle-outline"
+          label="App Version"
+          onPress={update.available ? update.start : undefined}
+          right={update.available
+            ? <Text style={{ color: brand.teal, fontSize: fontSize.sm, fontWeight: fontWeight.semibold }}>{version} · Update{update.latestVersion ? ` to ${update.latestVersion}` : ''}</Text>
+            : <Text style={{ color: c.textTertiary, fontSize: fontSize.sm }}>{version}</Text>}
+        />
       </Card>
 
       <Card>
