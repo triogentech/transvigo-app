@@ -9,7 +9,8 @@ import { DateTimeField } from '@/components/ui/DateTimeField';
 import { PhotoField } from '@/components/trip/PhotoField';
 import * as tripsApi from '@/api/trips.api';
 import { errMessage } from '@/api/client';
-import { getCurrentCoords, LocationUnavailableError } from '@/utils/trip-capture';
+import { LocationUnavailableError } from '@/utils/trip-capture';
+import { CameraDeniedError, reportTouchingPoint, takeStampPhoto } from '@/utils/touching-report';
 import { showToast } from '@/store/toast.store';
 import { formatDateTime } from '@/utils/format';
 import type { Trip, TouchingLocation } from '@/types/api.types';
@@ -73,95 +74,100 @@ export function MissingPhotos({ trip, onDone }: { trip: Trip; onDone: () => void
   );
 }
 
-/** The touching points the office added: report when you reach and when you leave each one. */
+/**
+ * The touching points the office added. The driver sees the next point only, with one button: "Reached" opens the
+ * camera for the stamped trip sheet, then time and GPS are taken and the point is saved; "Left" is one tap.
+ * The other points are listed small below.
+ */
 export function TouchingPoints({ trip, onChanged }: { trip: Trip; onChanged: () => void }) {
   const c = useColors();
   const points = (trip.touchingLocations ?? []).slice().sort((a, b) => a.sequence - b.sequence);
-  const [open, setOpen] = useState<{ id: string; stage: 'in' | 'out'; time: Date; photo: string | null } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [earlier, setEarlier] = useState<Date | null>(null); // "Reached / Left earlier?": the time to use instead of now
+  // The photo is kept when the location could not be read, so the driver does not shoot the sheet again.
+  const [kept, setKept] = useState<{ pointId: string; stage: 'in' | 'out'; uri: string } | null>(null);
   if (trip.currentStatus !== 'in_transit' || points.length === 0) return null;
 
-  const confirm = async (): Promise<void> => {
-    if (!open || busy) return;
-    const point = points.find((p) => p.id === open.id);
-    // Leaving needs the stamped trip sheet (taken now, or already added when reaching).
-    if (open.stage === 'out' && !open.photo && !point?.inSheetPhotoUrl && !point?.outSheetPhotoUrl) {
-      showToast({ type: 'error', message: 'Add a photo of the stamped trip sheet before you leave' });
-      return;
-    }
+  const current = points.find((p) => !p.inTime || !p.outTime) ?? null;
+  const stage: 'in' | 'out' = current && current.inTime ? 'out' : 'in';
+
+  const run = async (point: TouchingLocation): Promise<void> => {
+    if (busy) return;
     setBusy(true);
     try {
-      // Where you are: needed every time. Without location the point cannot be reported.
-      let coords;
+      // Reaching always takes the stamped-sheet photo; leaving only when no photo was ever taken for this point.
+      let photoUri: string | null = null;
+      if (stage === 'in' || !(point.inSheetPhotoUrl || point.outSheetPhotoUrl)) {
+        photoUri = kept && kept.pointId === point.id && kept.stage === stage ? kept.uri : await takeStampPhoto();
+        if (!photoUri) return; // the driver cancelled the camera: nothing is saved
+      }
       try {
-        coords = await getCurrentCoords();
+        await reportTouchingPoint({ tripId: trip.id, point, stage, time: earlier ?? undefined, photoUri });
       } catch (e) {
         if (e instanceof LocationUnavailableError) {
+          if (photoUri) setKept({ pointId: point.id, stage, uri: photoUri });
           showToast({ type: 'error', message: e.reason === 'denied' ? 'Location permission is off for TransVigo. Turn it on to report this point.' : e.reason === 'disabled' ? 'Your phone location (GPS) is turned off. Turn it on to report this point.' : 'We could not get your location. Try again.' });
           return;
         }
         throw e;
       }
-      if (open.photo) await tripsApi.uploadTouchingPhoto(trip.id, open.id, open.stage, open.photo);
-      await tripsApi.reportTouching(trip.id, open.id, open.stage, open.time, coords);
+      setKept(null);
+      setEarlier(null);
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      setOpen(null);
       onChanged();
     } catch (e) {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      showToast({ type: 'error', message: errMessage(e, 'Could not save the time') });
+      showToast({ type: 'error', message: e instanceof CameraDeniedError ? 'Camera permission is needed to photograph the stamped trip sheet' : errMessage(e, 'Could not save this point') });
     } finally {
       setBusy(false);
     }
   };
 
-  const row = (p: TouchingLocation) => {
-    const editing = open?.id === p.id ? open : null;
-    return (
-      <View key={p.id} style={[styles.pointRow, { borderBottomColor: c.border }]}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm }}>
-          <Text style={{ color: c.textPrimary, fontWeight: fontWeight.semibold, flex: 1 }}>{p.sequence}. {p.name ?? 'Touching point'}</Text>
-          {!p.inTime ? (
-            <Button size="sm" variant="secondary" onPress={() => setOpen({ id: p.id, stage: 'in', time: new Date(), photo: null })}>Reached</Button>
-          ) : !p.outTime ? (
-            <Button size="sm" variant="secondary" onPress={() => setOpen({ id: p.id, stage: 'out', time: new Date(), photo: null })}>Left</Button>
-          ) : null}
-        </View>
-        {p.inTime ? (
-          <Text style={{ color: c.textTertiary, fontSize: fontSize.xs }}>
-            {p.inLatitude != null || p.outLatitude != null ? 'Location saved' : 'No location'} · {p.inSheetPhotoUrl || p.outSheetPhotoUrl ? 'Stamped sheet added' : 'No stamped sheet yet'}
-          </Text>
-        ) : null}
-        {p.inTime ? (
-          <Text style={{ color: c.textSecondary, fontSize: fontSize.sm, fontFamily: fontFamily.mono }}>
-            In {clock(p.inTime)}{p.outTime ? `  ·  Out ${clock(p.outTime)}  ·  Halt ${hm(Math.round((new Date(p.outTime).getTime() - new Date(p.inTime).getTime()) / 60000))}` : '  ·  still here'}
-          </Text>
-        ) : null}
-        {editing ? (
-          <View style={{ gap: spacing.sm, marginTop: spacing.xs }}>
-            <DateTimeField label={editing.stage === 'in' ? 'Reached at' : 'Left at'} value={editing.time} onChange={(t) => setOpen({ ...editing, time: t })} />
-            <PhotoField
-              label={editing.stage === 'in' ? 'Stamped trip sheet photo (add it now, or when you leave)' : (p.inSheetPhotoUrl || p.outSheetPhotoUrl ? 'Stamped trip sheet photo (already added, add another if you like)' : 'Stamped trip sheet photo (required)')}
-              uri={editing.photo}
-              onChange={(uri) => setOpen({ ...editing, photo: uri })}
-              allowGallery
-            />
-            <Text style={{ color: c.textSecondary, fontSize: fontSize.xs }}>Your location is recorded when you save.</Text>
-            <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-              <Button size="sm" variant="ghost" onPress={() => setOpen(null)} style={{ flex: 1 }}>Cancel</Button>
-              <Button size="sm" loading={busy} onPress={() => void confirm()} style={{ flex: 1 }}>{editing.stage === 'in' ? 'Save reached time' : 'Save left time'}</Button>
-            </View>
-          </View>
-        ) : null}
-      </View>
-    );
-  };
+  const detail = (p: TouchingLocation) => (
+    <>
+      {p.inTime ? (
+        <Text style={{ color: c.textSecondary, fontSize: fontSize.sm, fontFamily: fontFamily.mono }}>
+          In {clock(p.inTime)}{p.outTime ? `  ·  Out ${clock(p.outTime)}  ·  Halt ${hm(Math.round((new Date(p.outTime).getTime() - new Date(p.inTime).getTime()) / 60000))}` : '  ·  still here'}
+        </Text>
+      ) : null}
+      {p.inTime ? (
+        <Text style={{ color: c.textTertiary, fontSize: fontSize.xs }}>
+          {p.inLatitude != null || p.outLatitude != null ? 'Location saved' : 'No location'} · {p.inSheetPhotoUrl || p.outSheetPhotoUrl ? 'Stamped sheet added' : 'No stamped sheet yet'}
+        </Text>
+      ) : null}
+    </>
+  );
 
+  const others = points.filter((p) => p.id !== current?.id);
   return (
     <Card>
       <Text style={[styles.title, { color: c.textPrimary }]}>Touching points</Text>
-      <Text style={{ color: c.textSecondary, fontSize: fontSize.sm }}>Report when you reach each point and when you leave it. The halt time is worked out for you.</Text>
-      {points.map(row)}
+      {current ? (
+        <View style={{ gap: spacing.sm }}>
+          <Text style={{ color: c.textSecondary, fontSize: fontSize.sm }}>{stage === 'in' ? 'Next stop' : 'You are at'}</Text>
+          <Text style={{ color: c.textPrimary, fontSize: fontSize.xl, fontWeight: fontWeight.bold }}>{current.sequence}. {current.name ?? 'Touching point'}</Text>
+          {detail(current)}
+          <Button size="lg" fullWidth loading={busy} leftIcon={stage === 'in' ? 'camera' : 'exit-outline'} onPress={() => void run(current)}>
+            {stage === 'in' ? 'Reached' : 'Left'}
+          </Button>
+          {stage === 'in' ? <Text style={{ color: c.textSecondary, fontSize: fontSize.xs }}>The camera opens for the stamped trip sheet. Your location and the time are saved with it.</Text> : null}
+          {earlier ? (
+            <DateTimeField label={stage === 'in' ? 'Reached at' : 'Left at'} value={earlier} onChange={setEarlier} />
+          ) : (
+            <Pressable onPress={() => setEarlier(new Date())} hitSlop={8}>
+              <Text style={{ color: brand.teal, fontSize: fontSize.sm, fontWeight: fontWeight.semibold }}>{stage === 'in' ? 'Reached earlier?' : 'Left earlier?'}</Text>
+            </Pressable>
+          )}
+        </View>
+      ) : (
+        <Text style={{ color: c.textSecondary, fontSize: fontSize.sm }}>All touching points are done. The halt time is worked out for you.</Text>
+      )}
+      {others.map((p) => (
+        <View key={p.id} style={[styles.pointRow, { borderBottomColor: c.border, opacity: p.inTime ? 1 : 0.55 }]}>
+          <Text style={{ color: c.textPrimary, fontWeight: fontWeight.semibold }}>{p.sequence}. {p.name ?? 'Touching point'}</Text>
+          {detail(p)}
+        </View>
+      ))}
       {(trip.haltMinutes ?? 0) > 0 ? <Text style={{ color: c.textPrimary, fontWeight: fontWeight.semibold }}>Total halt: {hm(trip.haltMinutes ?? 0)}</Text> : null}
     </Card>
   );
