@@ -18,7 +18,7 @@ import * as tripsApi from '@/api/trips.api';
 import { errMessage } from '@/api/client';
 import { showToast } from '@/store/toast.store';
 import { selectMode, useUpdateStore } from '@/store/update.store';
-import { formatDateTime } from '@/utils/format';
+import { formatDateTime, hasRoute } from '@/utils/format';
 import { allocatedMinutes, formatDuration, remainingMinutes, useNow } from '@/utils/trip-time';
 import type { Trip, TripStatus } from '@/types/api.types';
 
@@ -101,15 +101,21 @@ export default function TripDetailScreen() {
           }
         >
           <Card>
-            <View style={styles.routeRow}>
-              <Ionicons name="ellipse" size={12} color={brand.teal} />
-              <Text style={[styles.point, { color: c.textPrimary }]}>{trip.startPoint}</Text>
-            </View>
-            <View style={[styles.connector, { backgroundColor: c.border }]} />
-            <View style={styles.routeRow}>
-              <Ionicons name="location" size={14} color={brand.navy} />
-              <Text style={[styles.point, { color: c.textPrimary }]}>{trip.endPoint}</Text>
-            </View>
+            {hasRoute(trip) ? (
+              <>
+                <View style={styles.routeRow}>
+                  <Ionicons name="ellipse" size={12} color={brand.teal} />
+                  <Text style={[styles.point, { color: c.textPrimary }]}>{trip.startPoint || '—'}</Text>
+                </View>
+                <View style={[styles.connector, { backgroundColor: c.border }]} />
+                <View style={styles.routeRow}>
+                  <Ionicons name="location" size={14} color={brand.navy} />
+                  <Text style={[styles.point, { color: c.textPrimary }]}>{trip.endPoint || '—'}</Text>
+                </View>
+              </>
+            ) : (
+              <Text style={{ color: c.textSecondary }}>Route will be added by the office</Text>
+            )}
             <View style={styles.badgeRow}>
               <StatusBadge status={trip.currentStatus} variant="trip" />
               {trip.vehicle ? (
@@ -186,6 +192,7 @@ export default function TripDetailScreen() {
             ) : null}
           </Card>
 
+          {(trip.currentStatus === 'created' ? trip.startPoint : trip.endPoint)?.trim() ? (
           <Button
             variant="secondary"
             leftIcon="navigate"
@@ -199,6 +206,7 @@ export default function TripDetailScreen() {
           >
             {trip.currentStatus === 'created' ? 'Navigate to Pickup' : 'Navigate to Drop'}
           </Button>
+          ) : null}
 
           <View style={styles.quickRow}>
             <Button

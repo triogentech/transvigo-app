@@ -1,3 +1,4 @@
+import { getTripRoute } from '@/utils/format';
 import { useCallback, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -52,7 +53,7 @@ export default function TripsScreen() {
             {awaiting.tripNumber} · {awaiting.closeApproval === 'needs_changes' ? 'Sent back by the office' : 'Closed, waiting for approval'}
           </Text>
           <Text style={{ color: c.textSecondary, fontSize: fontSize.sm }}>
-            {awaiting.startPoint} → {awaiting.endPoint}
+            {getTripRoute(awaiting)}
           </Text>
           {awaiting.closeApproval === 'needs_changes' && awaiting.approvalNote ? (
             <Text style={{ color: '#dc2626', fontSize: fontSize.sm }}>{awaiting.approvalNote}</Text>

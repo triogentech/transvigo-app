@@ -1,3 +1,4 @@
+import { getTripRoute } from '@/utils/format';
 import { useCallback, useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { fontSize, fontWeight, radius, spacing, useColors } from '@/theme';
@@ -45,7 +46,7 @@ export default function OpsTrips() {
                 <Text style={{ color, fontSize: fontSize.xs, fontWeight: fontWeight.semibold }}>{t.currentStatus.replace('_', ' ')}</Text>
               </View>
             </View>
-            <Text style={[styles.route, { color: c.textPrimary }]} numberOfLines={1}>{t.startPoint} → {t.endPoint}</Text>
+            <Text style={[styles.route, { color: c.textPrimary }]} numberOfLines={1}>{getTripRoute(t)}</Text>
             <Text style={[styles.meta, { color: c.textSecondary }]}>{t.vehicle?.vehicleNumber ?? '—'} · {t.driver?.fullName ?? 'Unassigned'}</Text>
           </Card>
         );

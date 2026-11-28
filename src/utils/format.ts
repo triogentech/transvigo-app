@@ -61,8 +61,13 @@ export function maskAadhaar(aadhaar: string): string {
   return `XXXX-XXXX-${last4}`;
 }
 
+/** True when the office has not added the route yet (a trip the driver creates has none). */
+export function hasRoute(trip: Pick<Trip, 'startPoint' | 'endPoint'>): boolean {
+  return !!(trip.startPoint?.trim() || trip.endPoint?.trim());
+}
+
 export function getTripRoute(trip: Pick<Trip, 'startPoint' | 'endPoint'>): string {
-  return `${trip.startPoint} → ${trip.endPoint}`;
+  return hasRoute(trip) ? `${trip.startPoint || '?'} → ${trip.endPoint || '?'}` : 'Route will be added by the office';
 }
 
 /** "tyre_puncture" → "Tyre Puncture" */

@@ -3,7 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { brand, fontFamily, fontSize, fontWeight, radius, spacing, useColors } from '@/theme';
 import { Button } from '@/components/ui/Button';
 import { StatusBadge } from '@/components/ui/StatusBadge';
-import { formatRelativeTime } from '@/utils/format';
+import { formatRelativeTime, hasRoute } from '@/utils/format';
 import { formatDuration, remainingMinutes, useNow } from '@/utils/trip-time';
 import type { Trip } from '@/types/api.types';
 
@@ -26,21 +26,25 @@ export function ActiveTripBanner({ trip, onComplete, onPress }: ActiveTripBanner
           <StatusBadge status={trip.currentStatus} variant="trip" />
         </View>
 
+        {hasRoute(trip) ? (
         <View style={styles.routeBlock}>
           <View style={styles.routeRow}>
             <Ionicons name="ellipse" size={12} color={brand.teal} />
             <Text style={[styles.point, { color: c.textPrimary }]} numberOfLines={1}>
-              {trip.startPoint}
+              {trip.startPoint || '—'}
             </Text>
           </View>
           <View style={[styles.connector, { backgroundColor: c.border }]} />
           <View style={styles.routeRow}>
             <Ionicons name="location" size={14} color={brand.navy} />
             <Text style={[styles.point, { color: c.textPrimary }]} numberOfLines={1}>
-              {trip.endPoint}
+              {trip.endPoint || '—'}
             </Text>
           </View>
         </View>
+        ) : (
+          <Text style={{ color: c.textSecondary }}>Route will be added by the office</Text>
+        )}
 
         {left !== null ? (
           <Text style={[styles.eta, { color: left < 0 ? '#DC2626' : c.textSecondary }]}>
