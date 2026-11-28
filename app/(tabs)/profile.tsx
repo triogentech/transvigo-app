@@ -9,6 +9,7 @@ import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { confirmAction } from '@/utils/confirm';
 import { usePushStatusView } from '@/hooks/usePushStatusView';
+import { useUpdateAvailable } from '@/hooks/useUpdateAvailable';
 import { useAuthStore } from '@/store/auth.store';
 import { useThemeStore, type ThemeMode } from '@/store/theme.store';
 import * as driverApi from '@/api/driver.api';
@@ -25,6 +26,7 @@ export default function ProfileScreen() {
   const [me, setMe] = useState<DriverMe | null>(null);
   const [schedules, setSchedules] = useState<ServiceSchedule[]>([]);
   const push = usePushStatusView();
+  const update = useUpdateAvailable();
 
   useEffect(() => {
     let active = true;
@@ -125,7 +127,14 @@ export default function ProfileScreen() {
           right={<Text style={[styles.rowValue, { color: push.color }]}>{push.text}</Text>}
         />
         <ThemeModeRow />
-        <SettingsRow icon="information-circle-outline" label="App Version" right={<Text style={[styles.rowValue, { color: c.textTertiary }]}>{version}</Text>} />
+        <SettingsRow
+          icon="information-circle-outline"
+          label="App Version"
+          onPress={update.available ? update.start : undefined}
+          right={update.available
+            ? <Text style={[styles.rowValue, { color: brand.teal, fontWeight: fontWeight.semibold }]}>{version} · Update{update.latestVersion ? ` to ${update.latestVersion}` : ''}</Text>
+            : <Text style={[styles.rowValue, { color: c.textTertiary }]}>{version}</Text>}
+        />
       </SettingsGroup>
 
       <SettingsGroup title="SUPPORT">

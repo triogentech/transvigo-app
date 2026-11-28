@@ -115,13 +115,14 @@ export const useUpdateStore = create<UpdateState>((set, get) => ({
   },
 
   startUpdate: async () => {
-    const { policy, play } = get();
+    const { policy } = get();
     const mode = selectMode(get());
     const openStore = async (): Promise<void> => {
       const url = policy?.storeUrl ?? get().serverBlock?.storeUrl;
       if (url) await Linking.openURL(url).catch(() => undefined);
     };
     set({ phase: 'starting' });
+    await get().checkPlay(); // ask Play now, so the in-app update is used whenever Play offers it
     unsubscribePlay?.();
     unsubscribePlay = onPlayUpdateEvent({
       started: () => set({ phase: 'downloading' }),
@@ -129,6 +130,7 @@ export const useUpdateStore = create<UpdateState>((set, get) => ({
       cancelled: () => set({ phase: 'cancelled' }),
     });
 
+    const play = get().play;
     if (!play.available) {
       // Not offered by Play on this device (sideloaded APK, staged rollout, Play missing):
       // mandatory users are sent to the store listing; nothing else to do.
@@ -163,8 +165,9 @@ export function selectMode(s: Pick<UpdateState, 'policy' | 'play' | 'snoozedUnti
   if (!p || !p.configured) return 'none';
   if (p.maintenanceMode) return 'maintenance';
   if (p.forceUpdate) return 'mandatory';
-  // Optional: only if Play actually has the update (otherwise we'd offer something uninstallable).
-  if (p.updateAvailable && s.play.available && Date.now() >= s.snoozedUntil) return 'optional';
+  // Optional: the server says a newer version exists. Play is not asked here: Play may not report it yet (staged
+  // rollout, beta track) and the driver would never be told. "Update now" uses Play when it can, else opens the store.
+  if (p.updateAvailable && Date.now() >= s.snoozedUntil) return 'optional';
   return 'none';
 }
 
