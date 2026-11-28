@@ -30,8 +30,6 @@ export default function NewTripScreen() {
 
   const [tripNumber, setTripNumber] = useState('');
   const [dispatch, setDispatch] = useState(new Date());
-  const [from, setFrom] = useState('');
-  const [to, setTo] = useState('');
   const [tat, setTat] = useState('');
   const [odometer, setOdometer] = useState('');
   const [odoPhoto, setOdoPhoto] = useState<string | null>(null);
@@ -48,8 +46,6 @@ export default function NewTripScreen() {
     const km = Number(odometer);
     const tatHours = Number(tat.replace(',', '.'));
     if (!tripNumber.trim()) return setError('Enter the RPS / trip number from the trip sheet');
-    if (!from.trim()) return setError('Enter where the trip starts');
-    if (!to.trim()) return setError('Enter where the trip ends');
     if (!Number.isFinite(tatHours) || tatHours <= 0) return setError('Enter the TAT in hours (for example 36)');
     if (!odometer.trim() || !Number.isInteger(km) || km < 0) return setError('Enter the odometer reading in whole kilometres');
     if (km < minimum) return setError(`The odometer can’t be lower than the last reading (${minimum.toLocaleString('en-IN')} km)`);
@@ -61,8 +57,6 @@ export default function NewTripScreen() {
       const trip = await tripsApi.createDriverTrip({
         tripNumber: tripNumber.trim(),
         dispatchTime: dispatch.toISOString(),
-        startPoint: from.trim(),
-        endPoint: to.trim(),
         tatHours,
         startOdometer: km,
       });
@@ -110,8 +104,6 @@ export default function NewTripScreen() {
 
           <Input label="RPS / trip number" value={tripNumber} onChangeText={setTripNumber} autoCapitalize="characters" placeholder="From the trip sheet" leftIcon="document-text-outline" />
           <DateTimeField label="Dispatch time" value={dispatch} onChange={setDispatch} />
-          <Input label="From" value={from} onChangeText={setFrom} placeholder="Where the trip starts" leftIcon="ellipse-outline" />
-          <Input label="To" value={to} onChangeText={setTo} placeholder="Where the trip ends" leftIcon="location-outline" />
           <Input label="TAT (hours)" value={tat} onChangeText={(v) => setTat(v.replace(/[^0-9.,]/g, ''))} keyboardType="decimal-pad" placeholder="e.g. 36" leftIcon="timer-outline" />
           <Input
             label="Odometer reading (km)"

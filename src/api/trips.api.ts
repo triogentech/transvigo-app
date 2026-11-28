@@ -88,8 +88,6 @@ export async function reportLocationDenied(id: string, stage: CaptureStage): Pro
 export interface NewTripBody {
   tripNumber: string;
   dispatchTime: string; // ISO
-  startPoint: string;
-  endPoint: string;
   tatHours: number;
   startOdometer: number;
   vehicleId?: string;

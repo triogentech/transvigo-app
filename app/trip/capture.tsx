@@ -1,3 +1,4 @@
+import { getTripRoute } from '@/utils/format';
 import { useEffect, useState } from 'react';
 import { Image, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -133,7 +134,7 @@ export default function TripCaptureScreen() {
           <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + spacing.xxl }]} keyboardShouldPersistTaps="handled">
             <View style={[styles.summary, { backgroundColor: c.bgCard, borderColor: c.border }]}>
               <Text style={[styles.route, { color: c.textPrimary }]}>
-                {trip.startPoint} → {trip.endPoint}
+                {getTripRoute(trip)}
               </Text>
               <Text style={[styles.sub, { color: c.textSecondary }]}>
                 {trip.vehicle?.vehicleNumber ?? 'No vehicle'} · Allocated time {formatDuration(allocatedMinutes(trip))}
